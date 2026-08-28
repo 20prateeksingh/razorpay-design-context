@@ -1040,6 +1040,14 @@ function toolEditWireframe(sess, input) {
   const target = found.first();
   let did, note = '';
   try {
+    // A model that has just read escaped markup in a find_in_page snippet sometimes echoes it back
+    // escaped, and cheerio faithfully inserts it as text: the wireframe then renders literal
+    // "<section class=..." on the page. If the payload has entity-escaped tags and no real ones, it
+    // was meant as markup. Unescape it rather than paint it on the page.
+    if (/&lt;\/?[a-z]/i.test(html) && !/<[a-z]/i.test(html)) {
+      html = html.replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+    }
     if (op === 'replace_inner') { target.html(html); did = 'replaced the contents of'; }
     else if (op === 'insert_after') { target.after(html); did = 'inserted HTML after'; }
     else if (op === 'insert_before') { target.before(html); did = 'inserted HTML before'; }
@@ -1063,7 +1071,7 @@ function toolEditWireframe(sess, input) {
           + `. If you meant to keep that, call set_attr again with the old value and yours together.`;
       }
     }
-    fs.writeFileSync(abs, $.html());
+    fs.writeFileSync(abs, serializeDocument($));
   } catch (e) {
     return { error: `The edit failed: ${e.message.split('\n')[0]}` };
   }
@@ -1112,6 +1120,31 @@ function toolRenderWireframe(sess, input, emit) {
     content: `Rendered. It is at ${url}, the panel is already showing it, and it is now in the dashboard's designs band for everyone who opens it. Tell the visitor what you changed and why, and name anything you had to invent.`,
     summary: `Rendered ${round.roundDir}/${name}.`,
   };
+}
+
+/**
+ * Serialize the document, then give <style> and <script> their text back.
+ *
+ * cheerio entity-encodes the contents of raw-text elements on the way out, so a CSS child
+ * combinator written as `*:has(> h1)` serializes as `*:has(&gt; h1)` and the rule silently stops
+ * matching. Worse, it compounds: a second edit re-encodes the ampersand and you get `&amp;gt;`,
+ * which is how a wireframe ends up with visibly broken styling. Setting decodeEntities:false is
+ * not the fix, it makes it worse by double-encoding entities that were legitimately in the
+ * captured page.
+ *
+ * Inside <style> and <script> an entity has no meaning: the content is raw text by definition. So
+ * decoding there is safe, and only there.
+ */
+function serializeDocument($) {
+  const decode = (t) => t
+    .replace(/&(?:amp;)+gt;/g, '>').replace(/&(?:amp;)+lt;/g, '<')
+    .replace(/&gt;/g, '>').replace(/&lt;/g, '<')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&');
+  return $.html().replace(
+    /(<(style|script)\b[^>]*>)([\s\S]*?)(<\/\2>)/gi,
+    (_m, open, _tag, body, close) => open + decode(body) + close
+  );
 }
 
 /** GET /api/designs — every design in the shared tree. Returns true when it handled the request. */

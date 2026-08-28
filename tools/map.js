@@ -769,7 +769,16 @@ const server = http.createServer((req, res) => {
   }
 
   // ── static: serve design-context/, dashboard.html as home — no path traversal ──
-  const rel = decodeURIComponent(url === '/' ? '/dashboard.html' : url);
+  // decodeURIComponent throws URIError on a malformed escape, and `GET /%zz` from any stranger
+  // took the whole process down: no handler above it, so node exited. Worse than the outage, both
+  // rate limiters live in process memory, so every crash reset the daily cap that stands between a
+  // public URL and a paid API key. A malformed byte was an unbounded spend primitive.
+  let rel;
+  try {
+    rel = decodeURIComponent(url === '/' ? '/dashboard.html' : url);
+  } catch (_) {
+    return json(res, 400, { ok: false, error: 'malformed URL' });
+  }
   // The dashboard is the only file here that can be behind the filesystem (see above).
   if (path.basename(rel) === 'dashboard.html') refreshIfDesignsAreNewer();
   // Two roots: the library, and the sibling wireframes/ the designs band draws from. The prefix only
@@ -892,6 +901,16 @@ async function listenOn(port, attempt = 0) {
   });
   server.listen(port, HOSTED ? '0.0.0.0' : '127.0.0.1', () => announce(port));
 }
+
+// A last line of defence, not a licence to throw. Everything above is meant to handle its own
+// errors; this exists because one unhandled throw on a public URL is an outage plus a rate-limit
+// reset, and no single request should ever be able to buy that.
+process.on('uncaughtException', (err) => {
+  console.error(`✗ uncaught: ${err && err.stack ? err.stack.split('\n').slice(0, 3).join(' | ') : err}`);
+});
+process.on('unhandledRejection', (err) => {
+  console.error(`✗ unhandled rejection: ${err && err.message ? err.message : err}`);
+});
 
 listenOn(PORT);
 

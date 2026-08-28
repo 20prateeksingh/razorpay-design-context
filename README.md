@@ -1,99 +1,278 @@
-# Design Context Kit
+# Razorpay Design Context
 
-Turn the product you design for into **ready-made context for your AI tools** — its navigation mapped, every key page captured as an editable snapshot, and a guide that tells any AI agent what each page is. Then wireframe your next feature *on top of the real product* instead of describing it from memory.
+**Live: <https://razorpay-design-context.fly.dev>**
 
-Built for designers. You don't write code — you talk to your AI assistant and it drives the tools in here.
+A hosted, read-only library of **36 razorpay.com pages**, each captured as an editable snapshot with
+a screenshot, its verbatim copy and a written screen doc, plus an **AI agent** that answers from that
+library and wireframes changes directly on the real page markup.
 
-**Fastest start — let an AI set it up.** In the [Claude desktop app](https://code.claude.com/docs/en/desktop-quickstart) (no terminal) or the Claude Code CLI, paste:
+Built for Razorpay's AI Builders drive. It is a **fork** of my own open-source project, and
+[Provenance](#provenance-what-predates-this-and-what-does-not) draws that line precisely: what
+existed before, and what the eight commits on this branch added.
 
-> *"Read https://raw.githubusercontent.com/20prateeksingh/design-context-for-ai/main/INSTALL.md and follow it."*
+**If you have three minutes:** open the live link, click **Ask this library** in the top bar and ask
+it something about pricing, then read the [findings](#what-it-found-about-razorpaycom) and
+[the size constraint](#the-constraint-that-shaped-everything-a-24mb-page-cannot-enter-a-context-window)
+below. The chat is rate limited to 6 questions per address per hour, because the key behind it is
+mine.
 
-It installs the kit, opens the dashboard, and is then the AI that reads your library — same window, no second tool. [`INSTALL.md`](INSTALL.md) is written for the assistant; you don't need to read it. (Claude Code **on the web** can't do this — the kit needs a browser and a local server on your own machine.)
+Or go straight to the raw material:
+[`INDEX.md`](https://razorpay-design-context.fly.dev/INDEX.md) (every page, described) ·
+[`registry.json`](https://razorpay-design-context.fly.dev/registry.json) (the same for machines) ·
+[a captured page as it was served](https://razorpay-design-context.fly.dev/pages/card-tokenisation/page.html)
 
-## Start here
+---
 
-1. **Copy this repo's contents** into a folder named after your product (e.g. `acme-dashboard/`). One workspace = one product.
-2. **Run `tools/start.sh`** — on Windows, **`tools\start.cmd`** (double-click it, or run it in a terminal). It installs what's needed the first time, then opens the **dashboard** in your browser. That's the only step you take by hand. Working with an AI assistant instead? Give it the prompt above and skip this step — it handles 1 and 2 for you.
-3. **Follow the dashboard.** It asks three things — your product's URL, whether you sign in to use it, and what kind of product it is — then captures. If you sign in, it opens a browser window for you to log in (**your password stays in that window, never in the AI or any file**) and continues on its own when you close it. You watch the capture happen live; you never touch the terminal.
-4. When it's done, the dashboard **Home** is your product as a **page atlas** — every captured page as a screenshot card — with a running **ledger** (the journal) down the side and a **context-readiness** score up top. Tabs: **Home · Map · Design language · Use it**, plus the **Journal**. The **Map** plots every page by real clicks-from-home, sized by how linked-to it is, with undownloaded pages as ghosts in the fog; click a ghost to download it, click a captured page for its full doc (screenshot, states, description, link graph, history). Prefer reading? `design-context/INDEX.md` is the same map as a document; AI tools start at `design-context/registry.json`.
-5. The ledger's top **"next"** slot tells you the one move that matters — first it's **"Give your AI this toolkit"** (copy one prompt; your AI describes every page and the captions light up), then **"Make your first thing"** (wireframe a real page, or design something new in the product's own language from the **Use it** tab).
+## The problem
 
-Prefer the terminal, or driving it via your AI agent?
+AI design output does not look like your product, because the model has never seen your product.
+
+The usual answer is a token list. It does not work. A token list says what the constants are, not
+how they combine on a real page: which of the four blues is the primary button, how the hero stacks
+against the nav, which components repeat, what the page actually says. That information only exists
+in the rendered product.
+
+So capture the product instead. Crawl it logged out and read only, keep every page as editable
+markup plus a screenshot plus its verbatim copy, write a screen doc for each one, and hand an agent
+tools to read and edit that library. The design work then starts from the product, not from a
+description of it.
+
+---
+
+## What it found about razorpay.com
+
+This is the part worth your time. Everything here was measured from the capture of 2026-08-28, and
+every row links to the evidence on the live server.
+
+| Finding | Evidence |
+|---|---|
+| **Three navigation templates are live at once.** Four captured pages still run the pre-Agentic-Stack nav with an outlined "Log In": `card-tokenisation`, `payment-buttons`, `support-payments`, `x-payout-links`. `docs-api` is a third design system entirely. | [card-tokenisation](https://razorpay-design-context.fly.dev/pages/card-tokenisation/page.md) |
+| **`card-tokenisation` is in a teal and magenta palette on dark navy that appears nowhere else on the site.** It is not a capture error, it is template drift. It also pollutes the aggregate: some of the greens and teals in the Design language tab come from that one page. | [the page itself](https://razorpay-design-context.fly.dev/pages/card-tokenisation/page.html) |
+| **`/capital/` serves the RazorpayX Corporate Card page**, byte for byte identical to `/x/corporate-cards/` at 24,536 KB, flagged by the kit's own duplicate check. The homepage's fifth pillar is labelled "Get Credit & Loans", so the credit namespace resolves to a corporate card. The pillar itself routes past that root into `/capital/instant-settlements`, which was never downloaded. | [x-corporate-cards](https://razorpay-design-context.fly.dev/pages/x-corporate-cards/page.md) |
+| **Four separate surfaces state pricing.** `/pricing/` plus inline pricing blocks on `payment-buttons`, `invoices` and `payments-app`, each with its own numbers and its own framing. | [payment-buttons](https://razorpay-design-context.fly.dev/pages/payment-buttons/page.md) |
+| **Three of `/pricing/`'s four tabs have no captured evidence at all.** Business Banking, Payroll and Credit Solutions sit behind tab controls, and a read-only crawl cannot click a tab. The library says so instead of guessing. | [pricing](https://razorpay-design-context.fly.dev/pages/pricing/page.md) |
+| **`/demo/` takes a real ₹1 payment.** Razorpay Checkout, the most valuable unreached surface in this library, sits one click behind it, and nothing read-only can reach it: getting there means starting a payment. It needs a human-driven pass. | [demo](https://razorpay-design-context.fly.dev/pages/demo/page.md) |
+| **`/ai-builders/`, the page this application answers, is an orphan.** No captured page links to it and it is not in the primary nav. It was reached by typing the URL. It also runs a page-local dark theme shared with nothing else. | [ai-builders](https://razorpay-design-context.fly.dev/pages/ai-builders/page.md) |
+| **`support-payments` closes with a Subscriptions call to action** on a support page, which reads as a content-management artifact rather than a decision. | [support-payments](https://razorpay-design-context.fly.dev/pages/support-payments/page.md) |
+
+Scale of the capture: **36 pages** captured from **262 URLs discovered**, across **5 layout
+templates**, all 36 with a written screen doc. The observed design language is **48 colours** that
+appear on two or more pages (181 single-page values were dropped as noise) and a **24-step type
+ramp**. Context readiness scores **74**.
+
+---
+
+## The constraint that shaped everything: a 24MB page cannot enter a context window
+
+A captured `page.html` is the real page with its stylesheets and images inlined, so it survives
+offline and stays editable. On razorpay.com that runs from **0.8MB to 24MB**. The largest,
+`x-corporate-cards`, is 25,125,273 bytes. The whole library is 253MB on disk.
+
+No model can read that. Not a fragment of it. So the agent never sees the document:
+
+- **`find_in_page`** parses the snapshot server-side and returns at most **20 matches**, each a
+  200-character snippet plus a short CSS selector. Selectors are built to a maximum of three levels
+  and every candidate is tested against the live document before it is handed back. When three
+  levels are not unique (normal on a component-framework page, where fifteen accordion panels share
+  one generated class) it is pinned positionally with `:eq(n)`.
+- **`edit_wireframe`** takes a selector, an operation (`replace_inner`, `insert_after`,
+  `insert_before`, `remove`, `set_attr`) and an HTML fragment. The DOM surgery happens on the
+  server. The model writes the fragment and never holds the page.
+
+The parser choice is load-bearing, not taste. cheerio defaults to parse5, which allocates **752MB
+of heap** on the 24MB snapshot. Pinned to htmlparser2 the same file parses in 100ms for **3.5MB**,
+and round-trips with a 1.1KB difference across 25MB. On the hosted machine that is the difference
+between a wireframe and an out-of-memory kill, which is why both packages are pinned exactly in the
+Dockerfile rather than by range.
+
+The agent's full toolset is seven tools: `list_pages`, `read_page_doc`, `read_design_language`,
+`find_in_page`, `start_wireframe`, `edit_wireframe`, `render_wireframe`. Loop cap 12 iterations,
+8192 tokens per turn. Source: [`tools/chat.js`](tools/chat.js).
+
+---
+
+## Measured or absent
+
+The library's one rule is that it says nothing rather than guessing, and it holds all the way
+through to generated design work.
+
+- Every screen doc separates captured fact from model-written prose. The written analysis sits
+  between `ai:begin` / `ai:end` markers and is labelled `method: ai`. `tools/describe-write.js`
+  refuses to write a doc if it cannot find exactly one marker pair, because the one way to wreck a
+  library during the describe step is an edit that lands outside the markers and overwrites a
+  captured fact.
+- Each page doc lists **actions visible but not performed**, and **states not captured**, by name.
+- The agent's system prompt makes the same rule explicit: ground every claim in a tool result, never
+  fill a gap from general knowledge about Razorpay or about payments.
+- It survives into artifacts. During verification, a wireframe of the pricing page rebuilt it as a
+  four-column comparison and tagged the three uncaptured tabs `NOT CAPTURED` rather than inventing
+  them (recorded in commit `fce1573`).
+
+Captured page text is scraped third-party marketing copy, so it is untrusted input. Every tool
+result carrying it is fenced in `<library_content>` tags, any literal closing tag inside the body is
+defanged first so captured text cannot close the fence and speak as the operator, and the system
+prompt states that text inside a fence is data and never an instruction.
+
+---
+
+## Three capture bugs found and fixed
+
+All three were found by describing the 36-page capture and checking the result against the live
+site. Commit `7b0a792`.
+
+1. **The kit's own progress pill was landing in the "verbatim copy" of every page.** `page.html`
+   stripped every `[id^="__dck"]` node before serialising; `extractContent` never did. The
+   instrument's own caption sat in the file that calls itself a verbatim record of the product, on
+   all 36 pages, where no AI reading it could tell it from Razorpay's words.
+2. **Closed navigation was read as page copy.** A mega-menu is often not `display:none` but
+   `opacity:0` or clipped to zero height, so on `/x/payout-links` twelve menu labels appeared as
+   though the page said them. The obvious fix is worse than the bug: excluding everything at
+   `opacity:0` also drops scroll-reveal sections, and `checkVisibility`'s `checkVisualCollapse`
+   drops anything under `content-visibility`, which Framer puts on every offscreen section. Together
+   they cut the homepage from about 120 headings to 10 and `payment-gateway` from about 70 to 34,
+   deleting the hero and every feature block. Marketing pages hide content to reveal it, navigation
+   hides content to keep it closed, so the test is scoped to `nav`, `header` and `[role=navigation]`.
+3. **Tall pages photographed as blank white.** Above 8000px the capture resized the viewport to
+   1440x8000 and shot in one pass, which re-runs layout and can leave scroll-reveal sections unfired.
+   `/x/` went from 793 painted elements to 125 and produced blank white below the hero,
+   deterministically, while `content.md` held all 15,990px of its text. Scrolling afterwards does not
+   recover them. The painted-element count is now measured either side of the resize and a collapse
+   falls back to a stitched full-page shot. **Seven of 36 pages needed it.**
+
+---
+
+## How the hosted mode works
+
+The kit was built to run on one designer's machine, where whoever is driving it owns the workspace
+and every write is theirs. None of that holds on a public URL, so `DCK_HOSTED=1` changes four things
+and nothing else ([`tools/map.js`](tools/map.js)):
+
+| Hosted change | Check it |
+|---|---|
+| Binds `0.0.0.0`, takes its port from the environment | it is answering you at all |
+| Stops reporting `workspacePath`, which is an absolute path on someone's disk | `curl .../api/status` returns `"hosted":true` and no path |
+| **Refuses every POST.** An allowlist of none, not a blocklist, so a write endpoint added later is refused by default rather than quietly exposed | `curl -X POST .../api/figma-copy` returns 403 |
+| Asks crawlers to stay out | `X-Robots-Tag: noindex, nofollow, noarchive, noimageindex` on every response, plus `robots.txt` with `Disallow: /` |
+
+`/api/chat` is the single deliberate exception to the POST refusal, because it does write: a
+rendered wireframe lands in a shared designs tree and stays there for everyone. The hole is drawn as
+narrowly as it goes. Every write is rebuilt from `DCK_DESIGNS_DIR` and re-checked against it after
+normalisation, and chat refuses to start at all if that directory overlaps the captured library. The
+library is somebody else's site recorded as fact, and a stranger on the internet must not move a byte
+of it.
+
+Rate limits are 6 requests per address per hour and 150 a day, because the key behind the panel is
+one person's.
+
+**Deployment.** A single Fly machine in `sin` (`bom` is deprecated and refuses new machines, which
+surfaces as a deploy that prints a release, exits 0, and leaves zero machines running). The 250MB
+library is baked into the image rather than mounted, so the demo opens instantly and depends on no
+volume and no network fetch. Designs go on a volume at `/data`, which is why there is exactly one
+machine: a volume attaches to one, and two machines would give the team two silently different
+libraries. `auto_stop_machines = "suspend"`, so an idle demo costs nothing and resumes in about a
+second. The image installs exactly two packages and deliberately not with `npm ci`, which would drag
+Playwright into a server whose entire design is that it cannot drive a browser.
+
+---
+
+## Provenance: what predates this, and what does not
+
+This repo is a fork of [`20prateeksingh/design-context-for-ai`](https://github.com/20prateeksingh/design-context-for-ai)
+(the Design Context Kit, MIT, first commit 2026-07-19), wired here as the `upstream` remote. Being
+straight about that is more useful than letting you find it.
+
+**Predates this challenge.** The capture engine (`tools/capture.js`), the dashboard and its atlas,
+map and design-language panes, the page-doc format, the wireframe-on-snapshot skill and its
+`lofi-check.js` gate, and Copy for Figma. Roughly 112 commits of prior work.
+
+**Built for this challenge**, in the eight commits from `7b0a792` to `84c0b84`:
+
+| Built here | Where |
+|---|---|
+| Hosted read-only mode: bind, POST refusal, path withholding, noindex, and a dashboard that hides the controls it can no longer back | `tools/map.js`, `tools/dashboard-template.html` |
+| **The AI chat panel**, replacing the kit's copy-a-prompt calls to action. Locally nothing changes: the intent lookup returns null unless the page is hosted, so every button still copies its prompt. Six intents open the chat; five cannot become chat and say so, because they drive a real browser on the host's machine, with the command still one click away | `tools/chat.js` (1,379 lines, new), `tools/dashboard-template.html` |
+| **Selector-scoped wireframe editing**, the mechanism that lets an agent edit a document it can never load | `tools/chat.js` |
+| Shared permanent designs library on a volume, with rounds claimed off disk via `mkdir -p` so two people wireframing the same page get round-1 and round-2 instead of colliding. Session ids are deliberately not published on `/api/designs`: a session id is a live handle that would resume somebody else's conversation | `tools/chat.js`, `fly.toml`, `docker-entrypoint.sh` |
+| Containerisation and deploy | `Dockerfile`, `fly.toml`, `docker-entrypoint.sh` |
+| **Three capture-engine bug fixes** and `tools/describe-write.js` | `tools/capture.js`, `tools/describe-write.js` |
+| The captured razorpay.com library itself: 36 pages, 36 screen docs | `design-context/` |
+
+Outside the captured library, the fork is 13 files, 2,868 insertions and 63 deletions against
+`upstream/main`. Verify it yourself:
 
 ```bash
-tools/start.sh                                        # deps + server + dashboard (the easy path)
-# or, step by step:
-tools/setup.sh                                        # one-time: install dependencies + browser
-node tools/login.js --url https://app.example.com     # log in once, close the window (only if you sign in)
-node tools/capture.js --url https://app.example.com   # capture → design-context/
-node tools/capture.js --url https://example.com --logged-out   # a public site: no login, no profile
+git remote add upstream https://github.com/20prateeksingh/design-context-for-ai.git && git fetch upstream
+git diff --stat upstream/main...HEAD -- . ':!design-context' ':!wireframes'
+git log --oneline upstream/main..HEAD
 ```
 
-_Windows: the easy path is **`tools\start.cmd`** — the twin of `start.sh`, so double-clicking works there too. The `.sh` scripts are macOS/Linux only, `setup.sh` included. To go step by step instead, run these lines **one at a time** (Windows PowerShell has no `&&`, and chaining them is a parse error that stops the line before anything in it runs):_
+The commit messages are the real record of what was decided and why. They are long on purpose.
 
-```
-npm install --prefix tools --no-fund --no-audit
-npx --prefix tools playwright install chromium
-node tools/map.js --port 4173
-```
+---
 
-_The `node` commands above then work exactly as shown. Windows has been through a cold-start run of both routes — the AI-assisted one and this one — and capture, the dashboard, design-language extraction and folder paths containing spaces all came through clean. What it doesn't get is the double-click convenience: the `.sh` scripts need Git Bash, and even there they won't open your browser for you, so open the dashboard URL yourself._
+## Known defects, stated rather than hidden
 
-## After capture — use it
+The library documents its own failures in the same place it documents its facts.
 
-**Any moment of your product, in Figma, editable, in one paste.** On any page — the Home atlas panel, the Map panel, or a page doc (and each captured state) — click **⧉ Copy for Figma** and paste into your Figma file. It lands as editable **auto-layout layers**, not a flat image — arrange or restyle freely. No plugin, no extension, no Dev Mode, no paid seat; your library stays untouched.
+- **`demo` captures badly and it is unresolved.** The navigation mega-menus paint over the page body
+  and the product area is lost. It reproduces every time. Ruled out so far: the cookie-dismiss click,
+  viewport width, missing reduced-motion, and the lazy-scroll settle. The page renders correctly on a
+  manual load at the same viewport, so the fault is in the capture path. The most promising lead is
+  recorded in the page doc.
+- **`payment-buttons` captured mid-render**, with two loading indicators still in the DOM after
+  several retries. Flagged as unusable as a design baseline rather than shipped quietly.
+- **16 of 36 screenshots are truncated at 8000px.** Each page doc says so and names the full page
+  height; the full text is still in `content.md`.
+- **Two page docs reference sibling captures that were folded out.** `x-corporate-cards` says
+  `/capital/` is "stored separately as `capital`", and `payment-links-2` says the same about
+  `payment-links`. Both duplicates were removed before shipping and the note text was not updated.
+  The underlying findings still stand (`/capital/` did return the byte-identical page), but the
+  sentences are stale.
+- `docs-api` is one page of a documentation site, which is not the documentation. Its computed styles
+  still feed the aggregate design language, so a share of the palette comes from a surface that
+  follows different rules. The page doc says so.
 
-Two network moments, stated plainly, because a copy is the one thing here that reaches outside your machine:
+---
 
-- **A copy loads Figma's own converter from `mcp.figma.com`** at the moment you click. It is Figma's code, fetched fresh each time rather than shipped inside the kit, and it runs in your browser like any other script on the page.
-- **If that host can't be reached** — you're offline, or your network blocks it — the copy falls back to the converter bundled under `tools/vendor/`, which fetches public font files from a CDN so your pasted text stays text instead of disappearing. The success message names whichever converter ran, so you always know which one you got.
+## Run it yourself
 
-Neither path uploads your page or your library. The conversion happens entirely on your machine, and no data of yours is sent to either host.
+The hosted demo is fixed and read only. To capture your own product you run the kit locally, where
+the browser and the login are yours:
 
-The dashboard's **Use it** tab turns the library into next moves — every button copies a ready-to-paste prompt with your real file paths already in it. In short:
-
-- **With the Claude desktop app (recommended, no terminal):** open it on **this folder** — it reads this workspace's instructions and knows every page. Ask it to *describe the pages*, *wireframe on a page*, or *what's missing?* Open it on the folder itself, not the folder above: that's how the kit's instructions load in full.
-- **With the Claude Code CLI:** same thing from a terminal — `cd <your-workspace>`, then `claude`.
-- **With another AI coding tool** (Cursor, Windsurf): point it at `AGENTS.md`, then tell it to read `design-context/INDEX.md`.
-- **With a chat-only AI** (claude.ai, ChatGPT): use the Use-it tab's **Copy context bundle** button — it assembles a self-contained summary you paste in, no file access needed.
-- **By hand:** any `design-context/pages/<slug>/page.html` opens in your browser and is an editable design baseline.
-
-> Captured logged-in? The library holds your real account data — share the folder or a bundle accordingly, and never share `profiles/`.
-
-## What you end up with
-
-```
-your-product/
-├── design-context/          ← the captured library (starts empty)
-│   ├── INDEX.md             ← START HERE — every page, described and linked
-│   ├── registry.json        ← the same map for machines — point AI tools here
-│   ├── ia/sitemap.json      ← your product's navigation, mapped
-│   └── pages/<page>/        ← per page: page.md digest · screenshot.png ·
-│                              editable page.html · verbatim content.md ·
-│                              style tally · provenance meta ·
-│                              thumb.png (what the dashboard draws — derived)
-├── wireframes/              ← your design explorations (starts empty)
-├── tools/ · skills/         ← the machinery + the AI's instructions
-└── profiles/                ← your browser login (created on first login; stays on your machine)
+```bash
+git clone https://github.com/20prateeksingh/razorpay-design-context.git
+cd razorpay-design-context
+tools/start.sh                                                  # deps, server, dashboard
+node tools/capture.js --url https://example.com --logged-out    # public site: no login, no profile
 ```
 
-Repeating pages collapse to one representative: 300 product pages that share a layout become **one** captured example, with the count recorded — small library, full picture.
+The chat panel needs an `ANTHROPIC_API_KEY` (see `.env.example`). Nothing else does: the library, the
+atlas, the map, the design language and Copy for Figma all work with no key at all, and the dashboard
+serves the whole library on a machine that ran no `npm install`.
 
-## The rules the kit lives by
+To run the hosted mode locally, exactly as deployed:
 
-- **Read-only capture.** It follows links only — never clicks buttons, never submits forms. Nothing on your product can be created, deleted, sent, or paid. (One logged exception: dismissing a cookie banner.)
-- **Facts with provenance.** Everything in `design-context/` was extracted deterministically from the real product. The one AI-written part — each page's one-line description — is labeled `method: ai` wherever it appears.
-- **Your login stays yours.** You type your password into a normal browser window; the AI never sees it. The `profiles/` folder never leaves your machine — it's gitignored and must never be shared.
-- **Design on copies.** Wireframes live in `wireframes/`, built on copies of snapshots; the captured library is never edited.
+```bash
+docker build -t dck . && docker run -p 8080:8080 -e ANTHROPIC_API_KEY=sk-ant-... dck
+```
 
-## Requirements
+Full kit documentation, including capture options and the Windows path, is in
+[`INSTALL.md`](INSTALL.md) and the [upstream README](https://github.com/20prateeksingh/design-context-for-ai).
 
-macOS, Linux or Windows, with [Node.js](https://nodejs.org) (LTS). On macOS/Linux `tools/setup.sh` handles the rest; on Windows use the three commands in the note above, since the `.sh` scripts need Git Bash.
+---
 
-## Where the public page lives
+## About the hosted copy of razorpay.com
 
-The kit's public landing page is **no longer in this repo**. On 2026-08-07 it moved to Prateek's personal site and now lives at **<https://www.prateeksingh.in/tools/design-context-kit/>** (source: `public/tools/design-context-kit/` in the Portfolio-2025 repo). `docs/index.html` here is only a redirect stub, and `docs/assets/` was deleted with the move. The old GitHub Pages URL still resolves and redirects.
+This site hosts captured copies of public razorpay.com pages, logged out, for the purpose of
+demonstrating this tool. It is **not affiliated with, endorsed by, or connected to Razorpay**. All
+captured content, markup, imagery and copy remain the property of Razorpay Payments Private Limited.
 
-## Credits
+The capture is read only: it follows links, never clicks buttons, never submits forms, and never
+moves money. The one logged exception is dismissing a cookie banner.
 
-Figma paste is powered by Figma's own `capture.js`, loaded at copy time from `mcp.figma.com` — Figma's code, hotlinked and never redistributed here. The offline fallback is [@figit/dom-to-figma](https://www.npmjs.com/package/@figit/dom-to-figma) (MIT), vendored under `tools/vendor/`.
+Every response carries `X-Robots-Tag: noindex, nofollow, noarchive, noimageindex` and `robots.txt`
+disallows everything, because a hosted library is a near-complete copy of somebody else's website
+served from a domain that is not theirs. That is fine as a demonstration and wrong as a search
+result. Happy to take it down on request.
+
+The tooling is MIT licensed. See [`LICENSE`](LICENSE).

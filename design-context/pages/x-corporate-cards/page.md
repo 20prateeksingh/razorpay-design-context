@@ -59,7 +59,7 @@ One state: logged-out, as first served. The full 13,302px of the page is capture
 | Corporate Card | Payments and commercial | the payments set, `payroll`, `pricing`, `demo` |
 
 ### Notes
-- **This page is captured twice in the library.** `/capital/` returns the identical page, byte for byte at 24,536 KB, and is stored separately as `capital`. The kit's hygiene check flags the pair as sharing the `/x/corporate-cards` pattern. One of the two should be folded.
+- **`/capital/` returns this same page.** It was captured separately at first, identical in content at 24,536 KB, and the kit's hygiene check flagged the pair as sharing the `/x/corporate-cards` pattern. That duplicate has since been folded out, so this is now the library's only copy. Note the homepage does not link to `/capital/` directly: its "Get Credit & Loans" pillar routes to `/capital/instant-settlements`, which was never downloaded and sits in the frontier.
 - **Headings are sentence fragments split across lines** — "Get the corporate card", "that", "backs your ambition" are three headings forming one sentence. Do not read the heading list as a section list.
 - **"Zero Joining Fees Zero Annual Fees" is one heading with no separator**, as captured.
 <!-- ai:end -->

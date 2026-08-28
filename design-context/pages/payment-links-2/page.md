@@ -66,7 +66,7 @@ One state: logged-out, default industry tab, FAQ collapsed. The other five indus
 
 ### Notes
 - **The same two testimonials appear verbatim on `qr-code`.** Sarthak Vij's RTO quote and Nikhilendra Pratap Singh Deo's TokenHQ quote are shared assets across the no-code pages, not page-specific proof.
-- **This page is duplicated in the library as `payment-links`** — the same URL captured twice. This copy is the one the rest of the site links to; the other has no inbound links. See that page's note.
+- **This URL was captured twice.** The stray copy had no inbound links, because the site's own links all resolve to this one. It has since been folded out, so this is the library's only copy of `/payment-links/`.
 <!-- ai:end -->
 
 ## Files

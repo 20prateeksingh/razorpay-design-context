@@ -1,8 +1,9 @@
 # Hosted, read-only Design Context Kit for razorpay.com.
 #
 # Everything this app serves was captured ahead of time and committed into the image. The running
-# process cannot capture, crawl, log in, annotate or write anything: hosted mode refuses every
-# POST. So there is no volume, no database and no secret needed to serve the library.
+# process cannot capture, crawl or log in: hosted mode refuses every POST. The one thing it does
+# write is the shared designs library, which is why there is a volume below, and the chat panel
+# needs an ANTHROPIC_API_KEY set as a secret. Serving the captured library itself needs neither.
 
 app = "razorpay-design-context"
 primary_region = "sin"          # nearest live region to India; bom (Mumbai) is deprecated and refuses new machines

@@ -31,5 +31,6 @@
     "source": "scrape",
     "method": "dom",
     "determinism": "no OCR, no vision, no model-derived values"
-  }
+  },
+  "note": "Record of ONE capture run, not the library. This file lists the 6 pages of the first crawl. Later runs added pages selectively with --urls and do not rewrite it. For what the library actually holds, read registry.json or INDEX.md."
 }

@@ -50,7 +50,7 @@ Path `/card-tokenisation/`, reached from the Payments nav and payments cross-sel
 |---|---|---|
 | Hero body | "Customers can access their saved card details through tokenisation while you comply with RBI credit/debit card guidelines. Offer a seamless payment experience and grow your business!" | Top fold |
 | Hero links | Get Started · Join the Program · Learn more about the RBI guidelines here | Top fold |
-| Phone mock | A checkout sheet showing HDFC Credit Cards, Freecharge, Google Pay, Other Methods, "4 Offers Available", a "PAY ₹500" button and a numeric keypad, plus a saved card ending 1111 in the name GAURAV KUMAR | Top fold, right |
+| Phone mock | A checkout sheet showing HDFC Credit Cards, Freecharge, Google Pay, Other Methods, an offers-available row (the count is legible only at full resolution and is not asserted here), a "PAY ₹500" button and a numeric keypad, plus a saved card ending 1111 in the name GAURAV KUMAR | Top fold, right |
 | Benefit cards | 100% compliant ("Assign tokens that act as proxies for card details, without compromising on privacy") · Easily auto-enabled ("No integration needed for Standard Checkout & Custom UI accounts") | Mid page |
 | Capabilities | Powerful tracking & reporting · Flexible across payment systems · Highly scalable APIs | Mid page |
 
