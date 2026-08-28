@@ -1,0 +1,346 @@
+{
+  "method": "dom",
+  "note": "computed-style tally on THIS page; counts = elements observed",
+  "colors": [
+    {
+      "value": "rgb(0, 0, 0)",
+      "count": 1718
+    },
+    {
+      "value": "rgb(0, 0, 238)",
+      "count": 300
+    },
+    {
+      "value": "rgb(41, 80, 218)",
+      "count": 66
+    },
+    {
+      "value": "rgb(25, 40, 57)",
+      "count": 63
+    },
+    {
+      "value": "rgb(255, 255, 255)",
+      "count": 62
+    },
+    {
+      "value": "rgb(64, 86, 109)",
+      "count": 23
+    },
+    {
+      "value": "rgb(48, 94, 255)",
+      "count": 19
+    },
+    {
+      "value": "rgba(255, 255, 255, 0.8)",
+      "count": 18
+    },
+    {
+      "value": "rgb(137, 150, 169)",
+      "count": 7
+    },
+    {
+      "value": "rgb(77, 127, 255)",
+      "count": 4
+    },
+    {
+      "value": "rgba(64, 86, 109, 0.5)",
+      "count": 2
+    },
+    {
+      "value": "rgb(241, 245, 250)",
+      "count": 2
+    },
+    {
+      "value": "rgb(19, 100, 241)",
+      "count": 2
+    },
+    {
+      "value": "rgb(248, 250, 252)",
+      "count": 2
+    },
+    {
+      "value": "rgba(11, 10, 13, 0.2)",
+      "count": 2
+    },
+    {
+      "value": "rgba(0, 0, 0, 0)",
+      "count": 1
+    },
+    {
+      "value": "rgba(255, 255, 255, 0)",
+      "count": 1
+    },
+    {
+      "value": "rgb(117, 163, 255)",
+      "count": 1
+    },
+    {
+      "value": "rgb(67, 87, 117)",
+      "count": 1
+    },
+    {
+      "value": "rgba(120, 134, 155, 0.09)",
+      "count": 1
+    },
+    {
+      "value": "rgba(0, 162, 81, 0.09)",
+      "count": 1
+    },
+    {
+      "value": "rgb(0, 135, 67)",
+      "count": 1
+    },
+    {
+      "value": "rgb(3, 42, 62)",
+      "count": 1
+    },
+    {
+      "value": "rgb(17, 17, 17)",
+      "count": 1
+    }
+  ],
+  "typography": [
+    {
+      "value": "18px / 400 / Inter",
+      "count": 186
+    },
+    {
+      "value": "18px / 700 / Inter",
+      "count": 93
+    },
+    {
+      "value": "14px / 600 / Inter-SemiBold",
+      "count": 60
+    },
+    {
+      "value": "24px / 400 / TASA Orbiter Display SemiBold",
+      "count": 20
+    },
+    {
+      "value": "14px / 400 / Inter",
+      "count": 19
+    },
+    {
+      "value": "18px / 400 / TASA Orbiter Display Regular",
+      "count": 18
+    },
+    {
+      "value": "14px / 700 / Lato",
+      "count": 13
+    },
+    {
+      "value": "16px / 600 / Inter-SemiBold",
+      "count": 9
+    },
+    {
+      "value": "16px / 400 / Inter",
+      "count": 7
+    },
+    {
+      "value": "10px / 400 / Inter",
+      "count": 5
+    },
+    {
+      "value": "48px / 400 / TASA Orbiter Display SemiBold",
+      "count": 5
+    },
+    {
+      "value": "12px / 500 / Lato",
+      "count": 4
+    },
+    {
+      "value": "12px / 400 / Inter",
+      "count": 3
+    },
+    {
+      "value": "20px / 400 / TASA Orbiter Display Regular",
+      "count": 3
+    },
+    {
+      "value": "48px / 500 / TASA Orbiter Display Medium",
+      "count": 2
+    },
+    {
+      "value": "40px / 400 / TASA Orbiter Display SemiBold",
+      "count": 2
+    },
+    {
+      "value": "18px / 400 / TASA Orbiter Display SemiBold",
+      "count": 2
+    },
+    {
+      "value": "14px / 600 / Inter",
+      "count": 1
+    },
+    {
+      "value": "14px / 400 / Roboto",
+      "count": 1
+    },
+    {
+      "value": "24px / 700 / Inter",
+      "count": 1
+    },
+    {
+      "value": "10px / 500 / Inter",
+      "count": 1
+    },
+    {
+      "value": "12px / 700 / Lato",
+      "count": 1
+    },
+    {
+      "value": "12px / 600 / Inter",
+      "count": 1
+    },
+    {
+      "value": "16px / 600 / Inter",
+      "count": 1
+    },
+    {
+      "value": "13px / 400 / -apple-system",
+      "count": 1
+    }
+  ],
+  "spacing": [
+    {
+      "value": "24px",
+      "count": 209
+    },
+    {
+      "value": "16px",
+      "count": 37
+    },
+    {
+      "value": "36px",
+      "count": 12
+    },
+    {
+      "value": "20px",
+      "count": 12
+    },
+    {
+      "value": "80px",
+      "count": 7
+    },
+    {
+      "value": "10px",
+      "count": 5
+    },
+    {
+      "value": "12px",
+      "count": 4
+    },
+    {
+      "value": "8px",
+      "count": 4
+    },
+    {
+      "value": "32px",
+      "count": 4
+    },
+    {
+      "value": "6px",
+      "count": 3
+    },
+    {
+      "value": "17px",
+      "count": 3
+    },
+    {
+      "value": "1px",
+      "count": 2
+    },
+    {
+      "value": "-2px",
+      "count": 1
+    },
+    {
+      "value": "-10px",
+      "count": 1
+    },
+    {
+      "value": "50px",
+      "count": 1
+    },
+    {
+      "value": "64px",
+      "count": 1
+    },
+    {
+      "value": "60px",
+      "count": 1
+    },
+    {
+      "value": "4px",
+      "count": 1
+    },
+    {
+      "value": "9px",
+      "count": 1
+    },
+    {
+      "value": "14px",
+      "count": 1
+    }
+  ],
+  "radius": [
+    {
+      "value": "12px",
+      "count": 110
+    },
+    {
+      "value": "2px 2px 0px 0px",
+      "count": 15
+    },
+    {
+      "value": "8px",
+      "count": 14
+    },
+    {
+      "value": "4px",
+      "count": 12
+    },
+    {
+      "value": "40px",
+      "count": 2
+    },
+    {
+      "value": "2px",
+      "count": 1
+    },
+    {
+      "value": "4px 4px 0px 0px",
+      "count": 1
+    },
+    {
+      "value": "0px 0px 4px",
+      "count": 1
+    },
+    {
+      "value": "5px",
+      "count": 1
+    },
+    {
+      "value": "999px",
+      "count": 1
+    }
+  ],
+  "shadows": [
+    {
+      "value": "rgba(25, 40, 57, 0.09) 0px 2px 16px 0px",
+      "count": 5
+    },
+    {
+      "value": "rgba(0, 0, 0, 0.14) 0px 2px 16px 0px",
+      "count": 4
+    },
+    {
+      "value": "rgba(19, 38, 68, 0.18) 0px 24px 48px -12px",
+      "count": 1
+    },
+    {
+      "value": "rgba(0, 0, 0, 0.42) 0px 8px 30px 0px",
+      "count": 1
+    }
+  ]
+}

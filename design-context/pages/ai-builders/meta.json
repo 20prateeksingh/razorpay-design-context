@@ -1,0 +1,33 @@
+{
+  "url": "https://razorpay.com/ai-builders/",
+  "finalUrl": "https://razorpay.com/ai-builders/",
+  "route": "/ai-builders/",
+  "pattern": "/ai-builders",
+  "title": "AI Builder Jobs at Razorpay | Hiring AI Talent",
+  "navLabel": null,
+  "template": null,
+  "collapsed": 0,
+  "linksOut": [
+    "https://razorpay.com/ai-builders",
+    "https://razorpay.com/blog/razorpay-agentic-platform",
+    "https://razorpay.com/agentic-payments",
+    "https://razorpay.com/agent-studio",
+    "https://razorpay.com/careers",
+    "https://razorpay.com/"
+  ],
+  "offOriginHosts": [
+    "instagram.com",
+    "linkedin.com",
+    "razorpay.typeform.com",
+    "x.com"
+  ],
+  "capturedAt": "2026-08-28T05:31:35.536Z",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "source": "scrape",
+  "method": "dom",
+  "contentHash": "ef402011801b",
+  "visibleLoadingMarkers": 0
+}

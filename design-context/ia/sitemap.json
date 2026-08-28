@@ -1,0 +1,65 @@
+{
+  "product": "Razorpay",
+  "origin": "https://razorpay.com",
+  "capturedAt": "2026-08-28T01:38:30.375Z",
+  "source": "scrape",
+  "method": "dom",
+  "navSource": "nav-landmarks",
+  "note": "Nav order = the product’s own navigation. template != null means N same-shape pages collapsed to this representative.",
+  "pages": [
+    {
+      "label": "Landing",
+      "url": "https://razorpay.com/",
+      "route": "/",
+      "pattern": "/",
+      "slug": "home",
+      "template": "/",
+      "collapsed": 1
+    },
+    {
+      "label": "Engage",
+      "url": "https://razorpay.com/engage",
+      "route": "/engage/",
+      "pattern": "/engage",
+      "slug": "engage",
+      "template": null,
+      "collapsed": 0
+    },
+    {
+      "label": "Startups",
+      "url": "https://razorpay.com/m/startup-perks",
+      "route": "/m/startup-perks/",
+      "pattern": "/m/startup-perks",
+      "slug": "m-startup-perks",
+      "template": null,
+      "collapsed": 0
+    },
+    {
+      "label": "Pricing",
+      "url": "https://razorpay.com/pricing",
+      "route": "/pricing/",
+      "pattern": "/pricing",
+      "slug": "pricing",
+      "template": null,
+      "collapsed": 0
+    },
+    {
+      "label": null,
+      "url": "https://razorpay.com/x/payouts/?source=sign_up",
+      "route": "/x/payouts/",
+      "pattern": "/x/:slug",
+      "slug": "x-payouts-90f368",
+      "template": "/x/:slug",
+      "collapsed": 24
+    },
+    {
+      "label": null,
+      "url": "https://razorpay.com/support/payments",
+      "route": "/support/payments/",
+      "pattern": "/support/:slug",
+      "slug": "support-payments",
+      "template": "/support/:slug",
+      "collapsed": 4
+    }
+  ]
+}

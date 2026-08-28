@@ -1,0 +1,35 @@
+{
+  "kit": "design-context-kit v0.1",
+  "product": "Razorpay",
+  "startUrl": "https://razorpay.com/",
+  "resolvedOrigin": "https://razorpay.com",
+  "capturedAt": "2026-08-28T01:38:30.375Z",
+  "depth": 2,
+  "cap": 24,
+  "capped": 0,
+  "headless": false,
+  "counts": {
+    "captured": 6,
+    "skipped": 0,
+    "failed": 0
+  },
+  "pages": [
+    "home",
+    "engage",
+    "m-startup-perks",
+    "pricing",
+    "x-payouts-90f368",
+    "support-payments"
+  ],
+  "skipped": [],
+  "failed": [],
+  "actions": [],
+  "frontierHints": {
+    "overCapNav": []
+  },
+  "provenance": {
+    "source": "scrape",
+    "method": "dom",
+    "determinism": "no OCR, no vision, no model-derived values"
+  }
+}

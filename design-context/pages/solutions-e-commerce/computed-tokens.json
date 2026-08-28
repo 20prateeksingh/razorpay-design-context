@@ -1,0 +1,378 @@
+{
+  "method": "dom",
+  "note": "computed-style tally on THIS page; counts = elements observed",
+  "colors": [
+    {
+      "value": "rgb(81, 89, 120)",
+      "count": 548
+    },
+    {
+      "value": "rgb(82, 143, 240)",
+      "count": 375
+    },
+    {
+      "value": "rgb(111, 118, 145)",
+      "count": 238
+    },
+    {
+      "value": "rgb(255, 255, 255)",
+      "count": 119
+    },
+    {
+      "value": "rgb(85, 85, 85)",
+      "count": 86
+    },
+    {
+      "value": "rgb(47, 59, 83)",
+      "count": 58
+    },
+    {
+      "value": "rgb(95, 108, 125)",
+      "count": 43
+    },
+    {
+      "value": "rgba(255, 255, 255, 0.87)",
+      "count": 37
+    },
+    {
+      "value": "rgb(57, 135, 240)",
+      "count": 37
+    },
+    {
+      "value": "rgba(0, 0, 0, 0.54)",
+      "count": 35
+    },
+    {
+      "value": "rgb(13, 36, 98)",
+      "count": 24
+    },
+    {
+      "value": "rgb(8, 202, 115)",
+      "count": 23
+    },
+    {
+      "value": "rgb(108, 232, 171)",
+      "count": 16
+    },
+    {
+      "value": "rgb(16, 30, 111)",
+      "count": 12
+    },
+    {
+      "value": "rgb(10, 20, 88)",
+      "count": 9
+    },
+    {
+      "value": "rgb(13, 35, 102)",
+      "count": 7
+    },
+    {
+      "value": "rgb(210, 212, 221)",
+      "count": 7
+    },
+    {
+      "value": "rgb(19, 38, 68)",
+      "count": 4
+    },
+    {
+      "value": "rgb(67, 87, 117)",
+      "count": 4
+    },
+    {
+      "value": "rgb(0, 0, 0)",
+      "count": 3
+    },
+    {
+      "value": "rgba(255, 255, 255, 0.6)",
+      "count": 3
+    },
+    {
+      "value": "rgba(22, 47, 86, 0.05)",
+      "count": 2
+    },
+    {
+      "value": "rgb(250, 251, 255)",
+      "count": 2
+    },
+    {
+      "value": "rgb(15, 50, 107)",
+      "count": 1
+    },
+    {
+      "value": "rgb(39, 86, 193)",
+      "count": 1
+    },
+    {
+      "value": "rgb(89, 215, 163)",
+      "count": 1
+    },
+    {
+      "value": "rgb(92, 131, 255)",
+      "count": 1
+    },
+    {
+      "value": "rgb(254, 254, 254)",
+      "count": 1
+    },
+    {
+      "value": "rgb(17, 17, 17)",
+      "count": 1
+    }
+  ],
+  "typography": [
+    {
+      "value": "16px / 400 / Muli",
+      "count": 164
+    },
+    {
+      "value": "14px / 400 / Muli",
+      "count": 64
+    },
+    {
+      "value": "15px / 400 / Muli",
+      "count": 46
+    },
+    {
+      "value": "16px / 600 / Muli",
+      "count": 28
+    },
+    {
+      "value": "18px / 700 / Muli",
+      "count": 20
+    },
+    {
+      "value": "15px / 700 / Muli",
+      "count": 17
+    },
+    {
+      "value": "16px / 700 / Muli",
+      "count": 16
+    },
+    {
+      "value": "11px / 700 / Muli",
+      "count": 15
+    },
+    {
+      "value": "24px / 800 / Muli",
+      "count": 12
+    },
+    {
+      "value": "14px / 700 / Muli",
+      "count": 10
+    },
+    {
+      "value": "12px / 700 / Muli",
+      "count": 8
+    },
+    {
+      "value": "13px / 600 / Muli",
+      "count": 4
+    },
+    {
+      "value": "12.5px / 400 / Muli",
+      "count": 2
+    },
+    {
+      "value": "13px / 400 / Muli",
+      "count": 2
+    },
+    {
+      "value": "18px / 400 / Muli",
+      "count": 1
+    },
+    {
+      "value": "10px / 400 / Muli",
+      "count": 1
+    },
+    {
+      "value": "13px / 400 / -apple-system",
+      "count": 1
+    }
+  ],
+  "spacing": [
+    {
+      "value": "4px",
+      "count": 135
+    },
+    {
+      "value": "24px",
+      "count": 117
+    },
+    {
+      "value": "-24px",
+      "count": 78
+    },
+    {
+      "value": "8px",
+      "count": 76
+    },
+    {
+      "value": "16px",
+      "count": 52
+    },
+    {
+      "value": "20px",
+      "count": 42
+    },
+    {
+      "value": "32px",
+      "count": 34
+    },
+    {
+      "value": "12px",
+      "count": 32
+    },
+    {
+      "value": "17px",
+      "count": 29
+    },
+    {
+      "value": "10px",
+      "count": 25
+    },
+    {
+      "value": "48px",
+      "count": 18
+    },
+    {
+      "value": "15px",
+      "count": 18
+    },
+    {
+      "value": "6px",
+      "count": 16
+    },
+    {
+      "value": "46px",
+      "count": 15
+    },
+    {
+      "value": "170px",
+      "count": 14
+    },
+    {
+      "value": "-8px",
+      "count": 13
+    },
+    {
+      "value": "60px",
+      "count": 13
+    },
+    {
+      "value": "14px",
+      "count": 10
+    },
+    {
+      "value": "18px",
+      "count": 8
+    },
+    {
+      "value": "56px",
+      "count": 8
+    },
+    {
+      "value": "30px",
+      "count": 7
+    },
+    {
+      "value": "28px",
+      "count": 7
+    },
+    {
+      "value": "40px",
+      "count": 7
+    },
+    {
+      "value": "26px",
+      "count": 7
+    },
+    {
+      "value": "84px",
+      "count": 6
+    }
+  ],
+  "radius": [
+    {
+      "value": "100%",
+      "count": 37
+    },
+    {
+      "value": "2px",
+      "count": 37
+    },
+    {
+      "value": "6px",
+      "count": 35
+    },
+    {
+      "value": "50%",
+      "count": 24
+    },
+    {
+      "value": "8px",
+      "count": 5
+    },
+    {
+      "value": "3px",
+      "count": 3
+    },
+    {
+      "value": "0px 0px 6px 6px",
+      "count": 2
+    },
+    {
+      "value": "4px",
+      "count": 1
+    },
+    {
+      "value": "0px 0px 3px 3px",
+      "count": 1
+    },
+    {
+      "value": "999px",
+      "count": 1
+    }
+  ],
+  "shadows": [
+    {
+      "value": "rgba(0, 0, 0, 0.05) 2px 4px 9px 1px, rgba(0, 0, 0, 0.04) 0px 1px 1px 0px",
+      "count": 8
+    },
+    {
+      "value": "rgba(0, 0, 0, 0.05) 10px 10px 15px 0px",
+      "count": 6
+    },
+    {
+      "value": "rgba(0, 0, 0, 0.12) 0px 2px 6px 0px",
+      "count": 4
+    },
+    {
+      "value": "rgba(0, 0, 0, 0.06) 8px 8px 8px 0px",
+      "count": 4
+    },
+    {
+      "value": "rgba(0, 0, 0, 0.05) 2px 4px 9px 1px",
+      "count": 2
+    },
+    {
+      "value": "rgba(35, 43, 48, 0.06) 0px 4px 8px 0px",
+      "count": 2
+    },
+    {
+      "value": "rgba(0, 0, 0, 0.06) 0px 2px 12px 0px",
+      "count": 1
+    },
+    {
+      "value": "rgba(61, 68, 78, 0.07) 8px 8px 8px 0px",
+      "count": 1
+    },
+    {
+      "value": "rgba(0, 0, 0, 0.2) 0px 0px 10px 0px",
+      "count": 1
+    },
+    {
+      "value": "rgba(0, 0, 0, 0.14) 0px 8px 8px 0px",
+      "count": 1
+    }
+  ]
+}

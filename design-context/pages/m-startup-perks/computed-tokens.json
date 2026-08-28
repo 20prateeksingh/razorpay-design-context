@@ -1,0 +1,378 @@
+{
+  "method": "dom",
+  "note": "computed-style tally on THIS page; counts = elements observed",
+  "colors": [
+    {
+      "value": "rgb(0, 0, 0)",
+      "count": 2172
+    },
+    {
+      "value": "rgb(0, 0, 238)",
+      "count": 504
+    },
+    {
+      "value": "rgb(255, 255, 255)",
+      "count": 141
+    },
+    {
+      "value": "rgba(255, 255, 255, 0)",
+      "count": 91
+    },
+    {
+      "value": "rgb(25, 40, 57)",
+      "count": 67
+    },
+    {
+      "value": "rgb(41, 80, 218)",
+      "count": 58
+    },
+    {
+      "value": "rgb(64, 86, 109)",
+      "count": 53
+    },
+    {
+      "value": "rgb(48, 94, 255)",
+      "count": 42
+    },
+    {
+      "value": "rgb(34, 34, 34)",
+      "count": 18
+    },
+    {
+      "value": "rgb(223, 227, 233)",
+      "count": 16
+    },
+    {
+      "value": "rgb(19, 38, 68)",
+      "count": 16
+    },
+    {
+      "value": "rgb(93, 109, 134)",
+      "count": 16
+    },
+    {
+      "value": "rgba(255, 255, 255, 0.88)",
+      "count": 10
+    },
+    {
+      "value": "rgb(0, 158, 92)",
+      "count": 8
+    },
+    {
+      "value": "rgb(137, 150, 169)",
+      "count": 7
+    },
+    {
+      "value": "rgba(0, 158, 92, 0.3)",
+      "count": 6
+    },
+    {
+      "value": "rgba(11, 10, 13, 0.2)",
+      "count": 6
+    },
+    {
+      "value": "rgba(0, 0, 0, 0.72)",
+      "count": 3
+    },
+    {
+      "value": "rgb(118, 142, 167)",
+      "count": 3
+    },
+    {
+      "value": "rgb(255, 191, 191)",
+      "count": 3
+    },
+    {
+      "value": "rgb(225, 231, 237)",
+      "count": 3
+    },
+    {
+      "value": "rgb(0, 108, 63)",
+      "count": 2
+    },
+    {
+      "value": "rgb(29, 75, 99)",
+      "count": 1
+    },
+    {
+      "value": "rgba(108, 132, 157, 0.32)",
+      "count": 1
+    },
+    {
+      "value": "rgb(237, 247, 247)",
+      "count": 1
+    },
+    {
+      "value": "rgba(0, 162, 81, 0.09)",
+      "count": 1
+    },
+    {
+      "value": "rgb(0, 135, 67)",
+      "count": 1
+    },
+    {
+      "value": "rgb(17, 17, 17)",
+      "count": 1
+    }
+  ],
+  "typography": [
+    {
+      "value": "16px / 700 / Inter",
+      "count": 90
+    },
+    {
+      "value": "14px / 600 / Inter-SemiBold",
+      "count": 78
+    },
+    {
+      "value": "16px / 700 / Lato",
+      "count": 32
+    },
+    {
+      "value": "14px / 400 / Lato",
+      "count": 32
+    },
+    {
+      "value": "16px / 400 / Inter",
+      "count": 31
+    },
+    {
+      "value": "24px / 400 / TASA Orbiter Display SemiBold",
+      "count": 24
+    },
+    {
+      "value": "20px / 400 / TASA Orbiter Display SemiBold",
+      "count": 22
+    },
+    {
+      "value": "13px / 400 / Inter",
+      "count": 18
+    },
+    {
+      "value": "48px / 400 / TASA Orbiter Display Medium",
+      "count": 15
+    },
+    {
+      "value": "14px / 700 / Lato",
+      "count": 13
+    },
+    {
+      "value": "14px / 400 / Inter",
+      "count": 10
+    },
+    {
+      "value": "18px / 400 / TASA Orbiter Display Regular",
+      "count": 10
+    },
+    {
+      "value": "16px / 600 / Inter-SemiBold",
+      "count": 8
+    },
+    {
+      "value": "17px / 400 / Inter",
+      "count": 6
+    },
+    {
+      "value": "12px / 500 / Lato",
+      "count": 4
+    },
+    {
+      "value": "12px / 400 / Inter",
+      "count": 3
+    },
+    {
+      "value": "16px / 600 / Inter",
+      "count": 3
+    },
+    {
+      "value": "32px / 600 / TASA Orbiter Display SemiBold",
+      "count": 3
+    },
+    {
+      "value": "56px / 400 / TASA Orbiter Display Medium",
+      "count": 1
+    },
+    {
+      "value": "20px / 700 / TASA Orbiter Display Regular",
+      "count": 1
+    },
+    {
+      "value": "32px / 400 / TASA Orbiter Display Regular",
+      "count": 1
+    },
+    {
+      "value": "70px / 600 / EB Garamond",
+      "count": 1
+    },
+    {
+      "value": "64px / 600 / EB Garamond",
+      "count": 1
+    },
+    {
+      "value": "20px / 400 / TASA Orbiter Display Regular",
+      "count": 1
+    },
+    {
+      "value": "24px / 700 / TASA Orbiter Display SemiBold",
+      "count": 1
+    }
+  ],
+  "spacing": [
+    {
+      "value": "20px",
+      "count": 95
+    },
+    {
+      "value": "4px",
+      "count": 33
+    },
+    {
+      "value": "16px",
+      "count": 22
+    },
+    {
+      "value": "6px",
+      "count": 20
+    },
+    {
+      "value": "17px",
+      "count": 20
+    },
+    {
+      "value": "32px",
+      "count": 19
+    },
+    {
+      "value": "8px",
+      "count": 19
+    },
+    {
+      "value": "28px",
+      "count": 16
+    },
+    {
+      "value": "30px",
+      "count": 12
+    },
+    {
+      "value": "12px",
+      "count": 11
+    },
+    {
+      "value": "64px",
+      "count": 8
+    },
+    {
+      "value": "80px",
+      "count": 5
+    },
+    {
+      "value": "10px",
+      "count": 4
+    },
+    {
+      "value": "40px",
+      "count": 4
+    },
+    {
+      "value": "100px",
+      "count": 2
+    },
+    {
+      "value": "120px",
+      "count": 2
+    },
+    {
+      "value": "60px",
+      "count": 2
+    },
+    {
+      "value": "115px",
+      "count": 1
+    },
+    {
+      "value": "62px",
+      "count": 1
+    },
+    {
+      "value": "170px",
+      "count": 1
+    },
+    {
+      "value": "9px",
+      "count": 1
+    },
+    {
+      "value": "14px",
+      "count": 1
+    }
+  ],
+  "radius": [
+    {
+      "value": "8px",
+      "count": 167
+    },
+    {
+      "value": "4px",
+      "count": 52
+    },
+    {
+      "value": "2px 2px 0px 0px",
+      "count": 12
+    },
+    {
+      "value": "40px",
+      "count": 6
+    },
+    {
+      "value": "100px",
+      "count": 3
+    },
+    {
+      "value": "20px",
+      "count": 2
+    },
+    {
+      "value": "2px",
+      "count": 1
+    },
+    {
+      "value": "12px",
+      "count": 1
+    },
+    {
+      "value": "30px",
+      "count": 1
+    },
+    {
+      "value": "999px",
+      "count": 1
+    }
+  ],
+  "shadows": [
+    {
+      "value": "rgba(49, 49, 51, 0.1) 0px 2px 16px 0px",
+      "count": 18
+    },
+    {
+      "value": "rgba(0, 0, 0, 0.04) 0px -2px 4px 0px",
+      "count": 18
+    },
+    {
+      "value": "rgba(25, 40, 57, 0.09) 0px 2px 16px 0px",
+      "count": 2
+    },
+    {
+      "value": "rgba(8, 13, 41, 0.08) 0px -4px 16px -4px",
+      "count": 2
+    },
+    {
+      "value": "rgba(8, 13, 41, 0.08) 0px 12px 16px -4px, rgba(8, 13, 41, 0.08) 0px -4px 16px -4px",
+      "count": 1
+    },
+    {
+      "value": "rgba(0, 0, 0, 0.42) 0px 8px 30px 0px",
+      "count": 1
+    }
+  ]
+}

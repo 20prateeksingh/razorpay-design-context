@@ -1,0 +1,270 @@
+{
+  "method": "dom",
+  "note": "computed-style tally on THIS page; counts = elements observed",
+  "colors": [
+    {
+      "value": "rgb(11, 114, 231)",
+      "count": 471
+    },
+    {
+      "value": "rgb(82, 90, 118)",
+      "count": 284
+    },
+    {
+      "value": "rgb(0, 0, 0)",
+      "count": 143
+    },
+    {
+      "value": "rgb(52, 74, 108)",
+      "count": 136
+    },
+    {
+      "value": "rgb(43, 132, 234)",
+      "count": 58
+    },
+    {
+      "value": "rgb(255, 255, 255)",
+      "count": 47
+    },
+    {
+      "value": "rgb(22, 47, 86)",
+      "count": 43
+    },
+    {
+      "value": "rgb(83, 101, 130)",
+      "count": 43
+    },
+    {
+      "value": "rgb(8, 201, 114)",
+      "count": 24
+    },
+    {
+      "value": "rgb(129, 133, 151)",
+      "count": 22
+    },
+    {
+      "value": "rgb(2, 4, 42)",
+      "count": 10
+    },
+    {
+      "value": "rgb(50, 70, 100)",
+      "count": 8
+    },
+    {
+      "value": "rgb(75, 148, 237)",
+      "count": 4
+    },
+    {
+      "value": "rgb(128, 128, 128)",
+      "count": 3
+    },
+    {
+      "value": "rgba(22, 47, 86, 0.05)",
+      "count": 3
+    },
+    {
+      "value": "rgb(81, 89, 120)",
+      "count": 3
+    },
+    {
+      "value": "rgb(163, 175, 191)",
+      "count": 2
+    },
+    {
+      "value": "rgb(214, 68, 68)",
+      "count": 2
+    },
+    {
+      "value": "rgb(13, 35, 102)",
+      "count": 1
+    },
+    {
+      "value": "rgb(204, 204, 204)",
+      "count": 1
+    },
+    {
+      "value": "rgb(22, 138, 250)",
+      "count": 1
+    },
+    {
+      "value": "rgb(17, 17, 17)",
+      "count": 1
+    }
+  ],
+  "typography": [
+    {
+      "value": "16px / 400 / MulishVariable",
+      "count": 62
+    },
+    {
+      "value": "14px / 400 / MulishVariable",
+      "count": 61
+    },
+    {
+      "value": "16px / 700 / MulishVariable",
+      "count": 13
+    },
+    {
+      "value": "14px / 700 / MulishVariable",
+      "count": 11
+    },
+    {
+      "value": "12px / 700 / MulishVariable",
+      "count": 4
+    },
+    {
+      "value": "16px / 400 / lato",
+      "count": 2
+    },
+    {
+      "value": "16px / 600 / MulishVariable",
+      "count": 1
+    },
+    {
+      "value": "24px / 800 / MulishVariable",
+      "count": 1
+    },
+    {
+      "value": "20px / 400 / MulishVariable",
+      "count": 1
+    },
+    {
+      "value": "13px / 400 / MulishVariable",
+      "count": 1
+    },
+    {
+      "value": "15px / 400 / MulishVariable",
+      "count": 1
+    },
+    {
+      "value": "10px / 400 / MulishVariable",
+      "count": 1
+    },
+    {
+      "value": "13px / 400 / -apple-system",
+      "count": 1
+    }
+  ],
+  "spacing": [
+    {
+      "value": "16px",
+      "count": 123
+    },
+    {
+      "value": "12px",
+      "count": 82
+    },
+    {
+      "value": "8px",
+      "count": 62
+    },
+    {
+      "value": "24px",
+      "count": 60
+    },
+    {
+      "value": "4px",
+      "count": 60
+    },
+    {
+      "value": "6px",
+      "count": 54
+    },
+    {
+      "value": "20px",
+      "count": 30
+    },
+    {
+      "value": "32px",
+      "count": 16
+    },
+    {
+      "value": "10px",
+      "count": 11
+    },
+    {
+      "value": "3px",
+      "count": 9
+    },
+    {
+      "value": "28px",
+      "count": 5
+    },
+    {
+      "value": "1px",
+      "count": 4
+    },
+    {
+      "value": "3.85938px",
+      "count": 3
+    },
+    {
+      "value": "-1px",
+      "count": 2
+    },
+    {
+      "value": "180px",
+      "count": 2
+    },
+    {
+      "value": "40px",
+      "count": 2
+    },
+    {
+      "value": "80px",
+      "count": 1
+    },
+    {
+      "value": "9px",
+      "count": 1
+    },
+    {
+      "value": "14px",
+      "count": 1
+    }
+  ],
+  "radius": [
+    {
+      "value": "6px",
+      "count": 55
+    },
+    {
+      "value": "9999px",
+      "count": 54
+    },
+    {
+      "value": "2px",
+      "count": 36
+    },
+    {
+      "value": "8px",
+      "count": 4
+    },
+    {
+      "value": "4px",
+      "count": 2
+    },
+    {
+      "value": "999px",
+      "count": 1
+    },
+    {
+      "value": "50%",
+      "count": 1
+    }
+  ],
+  "shadows": [
+    {
+      "value": "rgba(0, 0, 0, 0.05) 2px 4px 9px 1px",
+      "count": 10
+    },
+    {
+      "value": "rgba(0, 0, 0, 0.12) 0px 2px 6px 0px",
+      "count": 4
+    },
+    {
+      "value": "rgba(0, 0, 0, 0.42) 0px 8px 30px 0px",
+      "count": 1
+    }
+  ]
+}

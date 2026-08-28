@@ -1,0 +1,418 @@
+{
+  "method": "dom",
+  "note": "computed-style tally on THIS page; counts = elements observed",
+  "colors": [
+    {
+      "value": "rgb(0, 0, 0)",
+      "count": 2173
+    },
+    {
+      "value": "rgb(0, 0, 238)",
+      "count": 263
+    },
+    {
+      "value": "rgb(25, 40, 57)",
+      "count": 121
+    },
+    {
+      "value": "rgb(255, 255, 255)",
+      "count": 79
+    },
+    {
+      "value": "rgb(41, 80, 218)",
+      "count": 61
+    },
+    {
+      "value": "rgb(64, 86, 109)",
+      "count": 46
+    },
+    {
+      "value": "rgb(48, 94, 255)",
+      "count": 36
+    },
+    {
+      "value": "rgb(240, 244, 246)",
+      "count": 30
+    },
+    {
+      "value": "rgb(118, 142, 167)",
+      "count": 7
+    },
+    {
+      "value": "rgb(137, 150, 169)",
+      "count": 7
+    },
+    {
+      "value": "rgb(241, 245, 250)",
+      "count": 6
+    },
+    {
+      "value": "rgb(213, 43, 30)",
+      "count": 6
+    },
+    {
+      "value": "rgb(237, 41, 57)",
+      "count": 6
+    },
+    {
+      "value": "rgba(255, 255, 255, 0.8)",
+      "count": 5
+    },
+    {
+      "value": "rgb(3, 42, 62)",
+      "count": 4
+    },
+    {
+      "value": "rgb(182, 236, 209)",
+      "count": 4
+    },
+    {
+      "value": "rgb(237, 247, 247)",
+      "count": 4
+    },
+    {
+      "value": "rgba(0, 0, 0, 0.72)",
+      "count": 4
+    },
+    {
+      "value": "rgba(255, 255, 255, 0)",
+      "count": 3
+    },
+    {
+      "value": "rgb(20, 61, 82)",
+      "count": 3
+    },
+    {
+      "value": "rgb(230, 239, 244)",
+      "count": 3
+    },
+    {
+      "value": "rgb(141, 141, 141)",
+      "count": 3
+    },
+    {
+      "value": "rgb(193, 255, 132)",
+      "count": 3
+    },
+    {
+      "value": "rgb(180, 205, 253)",
+      "count": 3
+    },
+    {
+      "value": "rgb(186, 217, 247)",
+      "count": 3
+    },
+    {
+      "value": "rgb(203, 221, 230)",
+      "count": 3
+    },
+    {
+      "value": "rgb(194, 224, 224)",
+      "count": 3
+    },
+    {
+      "value": "rgb(216, 253, 180)",
+      "count": 3
+    },
+    {
+      "value": "rgb(227, 234, 243)",
+      "count": 3
+    },
+    {
+      "value": "rgb(216, 228, 253)",
+      "count": 3
+    },
+    {
+      "value": "rgb(145, 227, 186)",
+      "count": 3
+    },
+    {
+      "value": "rgb(183, 216, 224)",
+      "count": 3
+    },
+    {
+      "value": "rgba(108, 132, 157, 0.18)",
+      "count": 3
+    },
+    {
+      "value": "rgb(234, 252, 217)",
+      "count": 2
+    },
+    {
+      "value": "rgb(238, 245, 252)",
+      "count": 2
+    },
+    {
+      "value": "rgba(0, 0, 0, 0.12)",
+      "count": 2
+    },
+    {
+      "value": "rgb(96, 145, 169)",
+      "count": 2
+    },
+    {
+      "value": "rgba(255, 255, 255, 0.32)",
+      "count": 2
+    },
+    {
+      "value": "rgba(0, 0, 0, 0)",
+      "count": 1
+    },
+    {
+      "value": "rgba(88, 88, 88, 0.2)",
+      "count": 1
+    }
+  ],
+  "typography": [
+    {
+      "value": "14px / 600 / Inter-SemiBold",
+      "count": 61
+    },
+    {
+      "value": "20px / 400 / TASA Orbiter Display Regular",
+      "count": 35
+    },
+    {
+      "value": "20px / 400 / Inter Tight",
+      "count": 30
+    },
+    {
+      "value": "14px / 500 / Inter",
+      "count": 29
+    },
+    {
+      "value": "12px / 400 / Inter",
+      "count": 23
+    },
+    {
+      "value": "18px / 400 / TASA Orbiter Display Regular",
+      "count": 17
+    },
+    {
+      "value": "45.57px / 500 / Inter Tight",
+      "count": 15
+    },
+    {
+      "value": "14px / 700 / Lato",
+      "count": 13
+    },
+    {
+      "value": "14px / 400 / Inter",
+      "count": 10
+    },
+    {
+      "value": "64px / 400 / TASA Orbiter Display Regular",
+      "count": 10
+    },
+    {
+      "value": "16px / 600 / Inter-SemiBold",
+      "count": 10
+    },
+    {
+      "value": "48px / 400 / TASA Orbiter Display Regular",
+      "count": 10
+    },
+    {
+      "value": "38.13px / 500 / Inter Tight",
+      "count": 9
+    },
+    {
+      "value": "48px / 400 / TASA Orbiter Display Medium",
+      "count": 6
+    },
+    {
+      "value": "16px / 400 / Inter",
+      "count": 5
+    },
+    {
+      "value": "32px / 400 / TASA Orbiter Display Regular",
+      "count": 4
+    },
+    {
+      "value": "16px / 400 / TASA Orbiter Display Regular",
+      "count": 4
+    },
+    {
+      "value": "32px / 400 / TASA Orbiter Display SemiBold",
+      "count": 4
+    },
+    {
+      "value": "20px / 600 / TASA Orbiter Display SemiBold",
+      "count": 4
+    },
+    {
+      "value": "12px / 500 / Lato",
+      "count": 4
+    },
+    {
+      "value": "24px / 400 / TASA Orbiter Display Regular",
+      "count": 3
+    },
+    {
+      "value": "31.43px / 500 / Inter Tight",
+      "count": 3
+    },
+    {
+      "value": "38.13px / 700 / Arial",
+      "count": 3
+    },
+    {
+      "value": "18px / 700 / TASA Orbiter Display Regular",
+      "count": 3
+    },
+    {
+      "value": "16px / 600 / Inter",
+      "count": 2
+    }
+  ],
+  "spacing": [
+    {
+      "value": "20px",
+      "count": 57
+    },
+    {
+      "value": "10px",
+      "count": 54
+    },
+    {
+      "value": "12px",
+      "count": 32
+    },
+    {
+      "value": "24px",
+      "count": 29
+    },
+    {
+      "value": "6px",
+      "count": 23
+    },
+    {
+      "value": "32px",
+      "count": 21
+    },
+    {
+      "value": "16px",
+      "count": 11
+    },
+    {
+      "value": "120px",
+      "count": 6
+    },
+    {
+      "value": "60px",
+      "count": 5
+    },
+    {
+      "value": "48px",
+      "count": 4
+    },
+    {
+      "value": "5px",
+      "count": 4
+    },
+    {
+      "value": "17px",
+      "count": 3
+    },
+    {
+      "value": "2px",
+      "count": 2
+    },
+    {
+      "value": "64px",
+      "count": 2
+    },
+    {
+      "value": "18px",
+      "count": 2
+    },
+    {
+      "value": "4px",
+      "count": 2
+    },
+    {
+      "value": "8px",
+      "count": 2
+    },
+    {
+      "value": "130px",
+      "count": 1
+    },
+    {
+      "value": "45px",
+      "count": 1
+    },
+    {
+      "value": "26px",
+      "count": 1
+    },
+    {
+      "value": "44px",
+      "count": 1
+    },
+    {
+      "value": "56px",
+      "count": 1
+    },
+    {
+      "value": "100px",
+      "count": 1
+    },
+    {
+      "value": "33px",
+      "count": 1
+    },
+    {
+      "value": "9px",
+      "count": 1
+    }
+  ],
+  "radius": [
+    {
+      "value": "24px",
+      "count": 73
+    },
+    {
+      "value": "12px",
+      "count": 34
+    },
+    {
+      "value": "100%",
+      "count": 33
+    },
+    {
+      "value": "100px",
+      "count": 30
+    },
+    {
+      "value": "417px",
+      "count": 27
+    },
+    {
+      "value": "8px",
+      "count": 25
+    },
+    {
+      "value": "4px",
+      "count": 15
+    },
+    {
+      "value": "2px 2px 0px 0px",
+      "count": 14
+    },
+    {
+      "value": "50%",
+      "count": 6
+    },
+    {
+      "value": "10px",
+      "count": 4
+    }
+  ],
+  "shadows": [
+    {
+      "value": "rgba(0, 0, 0, 0.42) 0px 8px 30px 0px",
+      "count": 1
+    }
+  ]
+}
