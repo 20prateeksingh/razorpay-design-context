@@ -57,7 +57,25 @@ const { execFile, spawn } = require('child_process');
 const { normalizeWizardUrl } = require('./wizard-url.js'); // F5: same bare-domain acceptance as the client wizard
 
 const args = process.argv.slice(2);
-const PORT = parseInt((args[args.indexOf('--port') + 1] || ''), 10) || 4173;
+
+/**
+ * HOSTED MODE — the dashboard served to strangers on the public internet.
+ *
+ * The kit is built to run on one designer's machine, where the person driving it owns the
+ * workspace and every write is theirs. None of that holds on a public URL, so hosted mode
+ * changes three things and nothing else:
+ *
+ *   1. It binds 0.0.0.0 and takes its port from the environment.
+ *   2. It stops reporting the workspace's absolute path, which is a local disk path and
+ *      nobody else's business.
+ *   3. It refuses every endpoint that writes to the library or spawns a browser. Capture,
+ *      login, guided capture, hygiene acks and annotations are all local-only acts; a visitor
+ *      triggering a crawl would be running it on the host's machine, in the host's name.
+ *
+ * The library stays exactly as read-only fact, which is what it always claimed to be.
+ */
+const HOSTED = process.env.DCK_HOSTED === '1' || args.includes('--hosted');
+const PORT = parseInt(process.env.PORT || (args[args.indexOf('--port') + 1] || ''), 10) || 4173;
 const KIT = path.join(__dirname, '..');
 const LIB = path.join(KIT, 'design-context');
 const TEMPLATE = path.join(__dirname, 'dashboard-template.html');
@@ -416,12 +434,26 @@ const server = http.createServer((req, res) => {
   const url = req.url.split('?')[0];
   const query = Object.fromEntries(new URLSearchParams(req.url.split('?')[1] || ''));
 
+  // A hosted library is a near-complete copy of somebody else's website — their markup, their
+  // screenshots, their words — served from a domain that is not theirs. That is fine as a
+  // demonstration and wrong as a search result, so hosted mode asks every crawler to stay out.
+  // Locally this is moot; nothing can reach it.
+  if (HOSTED) {
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive, noimageindex');
+    if (url === '/robots.txt') {
+      res.writeHead(200, { 'content-type': 'text/plain' });
+      return res.end('# A captured library, hosted for demonstration. Not the source site.\nUser-agent: *\nDisallow: /\n');
+    }
+  }
+
   // ── GET api ────────────────────────────────────────────────────────────────
   if (req.method === 'GET') {
     if (url === '/api/ping') return json(res, 200, { ok: true });
     if (url === '/api/status') return json(res, 200, {
       ok: true, firstRun: isFirstRun(), product: readProduct(), lastAttempt: readLastAttempt(),
-      workspacePath: KIT,  // absolute path of THIS workspace root — served live only, never baked into dashboard.html
+      // Absolute path of THIS workspace root — served live only, never baked into dashboard.html,
+      // and withheld entirely when hosted: it is a path on someone else's disk.
+      ...(HOSTED ? { hosted: true } : { workspacePath: KIT }),
       capture: { running: !!(capJob && capJob.running), mode: capJob ? capJob.mode : null, done: !!(capJob && !capJob.running) },
       login: { running: !!(loginJob && loginJob.running), done: !!(loginJob && !loginJob.running), started: !!loginJob },
       guided: guidedStatePayload(),
@@ -457,6 +489,18 @@ const server = http.createServer((req, res) => {
 
   // ── POST api ─────────────────────────────────────────────────────────────────
   if (req.method === 'POST' && url.startsWith('/api/')) {
+    // Hosted: every POST is refused. No allowlist, because there is nothing here a visitor
+    // needs to write. figma-copy looked like a safe exception — the DOM→Figma conversion and
+    // the clipboard write both happen client-side — but the endpoint itself appends to the
+    // shared figma-copies.json and then rebuilds the whole index, so it is both a shared-state
+    // mutation and a rebuild-per-click amplifier. Blocking it costs only the ledger entry:
+    // `api()` swallows the failure and the copy still lands, exactly as it does over file://.
+    if (HOSTED) {
+      return json(res, 403, {
+        ok: false, hosted: true,
+        error: 'This is a hosted, read-only copy of the library. Capture, login and annotation run on your own machine — copy the kit and point it at your product.',
+      });
+    }
     return readBody(req, (err, data) => {
       if (err) return json(res, 400, { ok: false, error: 'bad JSON' });
 
@@ -732,7 +776,7 @@ const server = http.createServer((req, res) => {
 // a busy port silently shows you the FIRST workspace's library. Same class as the known
 // "map.js serves the wrong library when invoked by path from another directory" bug.
 const PORT_RANGE = 10;
-const PORT_EXPLICIT = args.includes('--port');
+const PORT_EXPLICIT = args.includes('--port') || HOSTED;  // hosted binds one port or fails loudly
 // --open: open the dashboard in the default browser at the port we ACTUALLY bound. It exists so a
 // launcher doesn't have to guess: start.cmd cannot replicate start.sh's pre-flight port scan in
 // batch, and guessing 4173 would open ANOTHER workspace's dashboard when 4173 is theirs — the exact
@@ -763,7 +807,7 @@ function openBrowser(url) {
 }
 
 function announce(port) {
-  console.log(`\n🗺  Design context: http://localhost:${port}`);
+  console.log(`\n🗺  Design context: ${HOSTED ? `listening on 0.0.0.0:${port}` : `http://localhost:${port}`}`);
   // This line used to be unconditional, so it announced an empty library over a workspace with 8
   // captured pages, 8 descriptions and 3 wireframes on disk (found by the same end-to-end run).
   if (isFirstRun()) {
@@ -773,8 +817,12 @@ function announce(port) {
     try { pages = fs.readdirSync(path.join(LIB, 'pages')).filter(n => !n.startsWith('.')).length; } catch (_) {}
     console.log(`   ${pages} page${pages === 1 ? '' : 's'} captured → opens on Home: your captured pages, and the designs built on them.`);
   }
-  console.log(`   (Local only — nothing is exposed beyond this machine. Ctrl+C to stop.)\n`);
-  if (OPEN) openBrowser(`http://localhost:${port}`);
+  // Hosted mode serves this library to the public internet, so the local-only reassurance would
+  // be a lie. Say what is actually true of each mode instead.
+  console.log(HOSTED
+    ? `   (Hosted read-only: every write endpoint refuses. Capture, login and annotation are local-only acts.)\n`
+    : `   (Local only — nothing is exposed beyond this machine. Ctrl+C to stop.)\n`);
+  if (OPEN && !HOSTED) openBrowser(`http://localhost:${port}`);
 }
 
 async function listenOn(port, attempt = 0) {
@@ -806,7 +854,7 @@ async function listenOn(port, attempt = 0) {
     console.log(`→ Port ${port} is in use by ${who}; using ${port + 1} for this workspace instead.`);
     listenOn(port + 1, attempt + 1);
   });
-  server.listen(port, '127.0.0.1', () => announce(port));
+  server.listen(port, HOSTED ? '0.0.0.0' : '127.0.0.1', () => announce(port));
 }
 
 listenOn(PORT);

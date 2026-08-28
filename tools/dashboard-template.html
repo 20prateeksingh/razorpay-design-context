@@ -633,6 +633,17 @@
     .ent.live { animation:liveframe 2.4s ease-in-out infinite !important; }
     .livedot, .livedot.hot { animation:ringpulse 1s ease-in-out infinite !important; }
     .livedot.hot { animation-duration:.9s !important; } }
+  /* Hosted copy: every control below writes to the library or drives a browser on the host's
+     machine. Both are local-only acts, so they are not offered here. */
+  html[data-hosted="1"] #recapbtn,
+  html[data-hosted="1"] #capbtn,
+  /* Adding a state downloads a page, and guided capture opens a browser — both run on the
+     host's machine, so neither is offered here. Captured states themselves still show. */
+  html[data-hosted="1"] #stateform,
+  html[data-hosted="1"] .stt.add,
+  html[data-hosted="1"] .stt.guided,
+  html[data-hosted="1"] #pg-guided { display: none !important; }
+
   /* F1 capture menu — anchored under "+ Capture again"; fixed so it never grows the header */
   #recapmenu { position:fixed; z-index:60; min-width:288px; max-width:min(92vw,340px); background:var(--panel-2);
                border:1px solid var(--line); border-radius:12px; box-shadow:var(--elev); padding:6px; display:none; }
@@ -1696,6 +1707,14 @@ function mountAttemptBanner(a){
   // scheme error into the console; §8.J wants file:// consoles clean). Any http(s) host still probes.
   if (location.protocol === 'file:') serverMode = false;
   else try { STATUS = await (await fetch('/api/status')).json(); serverMode = true; } catch(_){ serverMode = false; }
+  // Hosted: the controls that write or crawl have no meaning on someone else's copy, and their
+  // endpoints refuse anyway. A button that always errors is worse than no button, so hide them
+  // and say plainly what this is.
+  if (serverMode && STATUS.hosted) {
+    document.documentElement.setAttribute('data-hosted', '1');
+    const chip = document.getElementById('betachip');
+    if (chip) { chip.textContent = 'READ-ONLY'; chip.title = 'A hosted copy of a captured library. Capture runs on your own machine.'; }
+  }
   mountFileBanner();
   if (serverMode && STATUS.lastAttempt) mountAttemptBanner(STATUS.lastAttempt);
   if (serverMode && STATUS.capture && STATUS.capture.running){ mountOnboard(); showProgress(true); attachStream(); return; } // kill-resilience resume
