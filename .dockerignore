@@ -1,0 +1,13 @@
+.git
+.gitignore
+node_modules
+tools/node_modules
+tools/package-lock.json
+profiles
+wireframes
+*.log
+.DS_Store
+.env
+fly.toml
+Dockerfile
+.dockerignore

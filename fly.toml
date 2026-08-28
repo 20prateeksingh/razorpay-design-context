@@ -1,0 +1,38 @@
+# Hosted, read-only Design Context Kit for razorpay.com.
+#
+# Everything this app serves was captured ahead of time and committed into the image. The running
+# process cannot capture, crawl, log in, annotate or write anything: hosted mode refuses every
+# POST. So there is no volume, no database and no secret needed to serve the library.
+
+app = "razorpay-design-context"
+primary_region = "sin"          # nearest live region to India; bom (Mumbai) is deprecated and refuses new machines
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  DCK_HOSTED = "1"
+  PORT = "8080"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "suspend"   # idle demo costs nothing; suspend resumes in ~1s, unlike a cold start
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 40
+    hard_limit = 80
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    timeout = "4s"
+    path = "/api/ping"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"                 # a read-only file server over a 250MB library

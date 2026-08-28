@@ -7,3 +7,9 @@ profiles/
 tools/node_modules/
 .DS_Store
 *.preview.png
+
+# API keys for the hosted chat panel. Never committed; on Fly they live as a secret
+# (flyctl secrets set), not in the image.
+.env
+.env.*
+!.env.example
