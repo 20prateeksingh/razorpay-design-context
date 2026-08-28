@@ -223,11 +223,11 @@ The library documents its own failures in the same place it documents its facts.
   several retries. Flagged as unusable as a design baseline rather than shipped quietly.
 - **16 of 36 screenshots are truncated at 8000px.** Each page doc says so and names the full page
   height; the full text is still in `content.md`.
-- **Two page docs reference sibling captures that were folded out.** `x-corporate-cards` says
-  `/capital/` is "stored separately as `capital`", and `payment-links-2` says the same about
-  `payment-links`. Both duplicates were removed before shipping and the note text was not updated.
-  The underlying findings still stand (`/capital/` did return the byte-identical page), but the
-  sentences are stale.
+- **The dashboard's "borrowed your product's colour" is wrong, and the kit does not know it.**
+  The seed it picked is `#0000EE`, observed 7,638 times across 22 pages. That is the browser's
+  default unstyled-link blue, not Razorpay's brand. Frequency alone cannot tell a brand colour from
+  a user-agent default, and Razorpay's real blues sit further down the list. The extraction is
+  honest about being a heuristic; this is what that costs.
 - `docs-api` is one page of a documentation site, which is not the documentation. Its computed styles
   still feed the aggregate design language, so a share of the palette comes from a surface that
   follows different rules. The page doc says so.
