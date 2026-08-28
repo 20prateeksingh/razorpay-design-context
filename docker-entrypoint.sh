@@ -18,19 +18,16 @@ if [ "$(id -u)" = "0" ]; then
   mkdir -p "$DESIGNS"
   chown -R node:node "$DESIGNS"
 
-  # design-context/ has to be writable too, and it is worth being precise about why, because the
-  # obvious posture (library root-owned, server unprivileged) is actively harmful here.
+  # Only the volume is chowned here. design-context/ is handed over at build time instead, because
+  # doing it on every boot cost 43 seconds of chown -R over 250MB while the health check failed.
   #
-  # map.js rebuilds the dashboard whenever the designs tree is newer than it. If that rebuild
-  # cannot write, it fails, dashboard.html's mtime never advances, and the condition stays true
-  # forever: a full 36-page buildIndex is attempted on EVERY request, caught, logged, and thrown
-  # away. The failure is silent to a visitor and ruinous to the server.
-  #
-  # What protects the captured facts is not the file mode. It is that hosted mode refuses every
-  # POST, and that the chat's writes are bounded to DESIGNS_DIR by an explicit containment check
-  # that refuses to start if that path overlaps design-context/. Within the library itself only
-  # build-index writes, and only the files it derives.
-  chown -R node:node /app/design-context
+  # That the library is writable at all reads like a regression and is the opposite. map.js rebuilds
+  # the dashboard whenever the designs tree is newer than it; a rebuild that cannot write never
+  # advances dashboard.html's mtime, so the condition stays true forever and a full 36-page
+  # buildIndex is attempted, caught and thrown away on EVERY request. Silent to a visitor, ruinous
+  # to the server. What protects the captured facts is that hosted mode refuses every POST, and that
+  # the chat's writes are bounded to DESIGNS_DIR by a containment check which refuses to start at
+  # all if that path overlaps design-context/.
   # Drop to node if we can. `su` ships in the debian-slim base, but a base image change should
   # degrade to a running server rather than a container that will not boot: a demo that serves
   # as root is a worse posture, a demo that does not start at all is no demo.

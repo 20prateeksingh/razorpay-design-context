@@ -36,6 +36,11 @@ COPY design-context/ ./design-context/
 COPY AGENTS.md CLAUDE.md README.md LICENSE ./
 COPY docker-entrypoint.sh ./
 
+# Hand the library to `node` at BUILD time, not at boot. Doing this in the entrypoint meant
+# chown -R over 250MB of captured pages on every machine start: 43 seconds before the server
+# answered, with the health check failing throughout. Baked into a layer it costs nothing at boot.
+RUN chown -R node:node /app/design-context
+
 # NOT `USER node`. The entrypoint starts as root only long enough to hand the designs volume to
 # the node user, then execs the server as node. See docker-entrypoint.sh for why.
 
