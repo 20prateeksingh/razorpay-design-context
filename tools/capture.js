@@ -341,8 +341,37 @@ async function extractContent(page) {
     const skip = (el) => {
       const t = el.tagName;
       if (['SCRIPT','STYLE','NOSCRIPT','TEMPLATE','SVG','PATH'].includes(t)) return true;
+      // The kit's own progress pill and guided overlay are injected into the live page. The
+      // page.html writer strips every [id^="__dck"] node before serialising; this extractor did
+      // not, so the instrument's own UI ("Design Context Kit — driving this window…") landed in
+      // content.md on every captured page. content.md calls itself a verbatim copy, and an AI
+      // reading it cannot tell the kit's caption from the product's own words.
+      if (el.id && el.id.startsWith('__dck')) return true;
+      if (el.closest && el.closest('[id^="__dck"]')) return true;
       const cs = getComputedStyle(el);
-      return cs.display === 'none' || cs.visibility === 'hidden';
+      if (cs.display === 'none' || cs.visibility === 'hidden') return true;
+      // No checkVisibility here. Both of its useful flags cost more than they save on a long
+      // marketing page: checkOpacity drops scroll-reveal sections that animate in from opacity:0,
+      // and checkVisualCollapse drops anything under content-visibility, which Framer applies to
+      // every offscreen section. Between them they cut razorpay.com's homepage from ~120 headings
+      // to 10 and its payment-gateway page from ~70 to 34. display:none and visibility:hidden,
+      // checked above, are the two that mean "not shown" without also meaning "not shown yet".
+
+      // Collapsed navigation, scoped deliberately to navigation.
+      //
+      // A closed mega-menu is often not display:none — it is opacity:0, or clipped to zero height —
+      // so its labels ("ACCEPT PAYMENTS OFFLINE", "FREE TOOLS") read as page copy. But the obvious
+      // fix, excluding anything at opacity:0 everywhere, is far worse: scroll-reveal sections sit at
+      // opacity:0 until they animate in, and excluding those stripped the hero and every feature
+      // block out of razorpay.com's payment-gateway page. Marketing pages hide content to reveal it;
+      // navigation hides content to keep it closed. So this test applies inside nav and header only.
+      const inNav = el.closest && el.closest('nav, header, [role="navigation"]');
+      if (inNav) {
+        if (parseFloat(cs.opacity) === 0) return true;
+        const clipped = cs.overflow === 'hidden' || cs.overflowY === 'hidden';
+        if (clipped && el.getBoundingClientRect().height === 0) return true;
+      }
+      return false;
     };
     const walk = (el) => {
       if (skip(el)) return;
@@ -555,10 +584,46 @@ async function writeSnapshot(page, context, requestedUrl, meta, outDir) {
   const fullPx = await page.evaluate(() => document.documentElement.scrollHeight).catch(() => 0);
   let screenshotTruncated = null;
   if (fullPx > SAFE_SCREENSHOT_HEIGHT) {
+    // Count what is actually painted before touching the viewport, so we can tell afterwards
+    // whether the resize cost us the page.
+    const visibleCount = () => page.evaluate((cap) => {
+      let n = 0;
+      for (const el of document.querySelectorAll('body *')) {
+        const r = el.getBoundingClientRect();
+        if (r.top < cap && r.width > 2 && r.height > 2
+          && (!el.checkVisibility || el.checkVisibility({ checkOpacity: true, checkVisualCollapse: true }))) n++;
+      }
+      return n;
+    }, SAFE_SCREENSHOT_HEIGHT).catch(() => 0);
+
+    const before = await visibleCount();
     await page.setViewportSize({ width: VIEWPORT.width, height: SAFE_SCREENSHOT_HEIGHT });
-    await page.screenshot({ path: path.join(dir, 'screenshot.png') });
-    await page.setViewportSize({ width: VIEWPORT.width, height: VIEWPORT.height });
-    screenshotTruncated = { shownPx: SAFE_SCREENSHOT_HEIGHT, fullPx };
+    await page.waitForTimeout(700);
+    const after = await visibleCount();
+
+    // Resizing the viewport re-runs layout, and pages whose sections reveal on scroll can evaluate
+    // those reveals against the new shape and never fire them. razorpay.com/x went from 793 painted
+    // elements to 125 this way and photographed as blank white below the hero — deterministically,
+    // while content.md still held all 15,990px of its text. Scrolling afterwards does not bring them
+    // back; only not resizing does. So: measure, and when the page collapses, pay the stitching cost
+    // instead. The stitch can duplicate sticky chrome (the reason resizing is preferred at all), but
+    // duplicated chrome is a flawed photograph of the page, where this is no photograph of it at all.
+    const collapsed = before > 40 && after / before < 0.5;
+    if (collapsed) {
+      await page.setViewportSize({ width: VIEWPORT.width, height: VIEWPORT.height });
+      await page.waitForTimeout(500);
+      console.log(`   ↻ ${slug}: viewport resize hid ${Math.round((1 - after / before) * 100)}% of the page — stitching the full shot instead`);
+      const ok = await page.screenshot({ path: path.join(dir, 'screenshot.png'), fullPage: true })
+        .then(() => true).catch(() => false);
+      if (!ok) {
+        await page.screenshot({ path: path.join(dir, 'screenshot.png') });
+        screenshotTruncated = { shownPx: VIEWPORT.height, fullPx };
+      }
+    } else {
+      await page.screenshot({ path: path.join(dir, 'screenshot.png') });
+      await page.setViewportSize({ width: VIEWPORT.width, height: VIEWPORT.height });
+      screenshotTruncated = { shownPx: SAFE_SCREENSHOT_HEIGHT, fullPx };
+    }
   } else {
     await page.screenshot({ path: path.join(dir, 'screenshot.png'), fullPage: true }).catch(async () => {
       await page.screenshot({ path: path.join(dir, 'screenshot.png') }); // fullPage can fail on huge pages
@@ -858,7 +923,7 @@ if (require.main === module) (async () => {
     fs.mkdirSync(path.join(OUT_DIR, 'pages'), { recursive: true });
     console.log(`\n🚀 Login-page capture (logged-out, ephemeral) — ${START_URL}\n`);
     const browser = await launchChromium({ headless: HEADLESS });
-    const context = await browser.newContext({ viewport: VIEWPORT, ...CTX_SCHEME });
+    const context = await browser.newContext({ viewport: VIEWPORT, reducedMotion: 'reduce', ...CTX_SCHEME });
     const page = await context.newPage();
     const actionLog = [];
     let loginCaptured = 0, loginSkipped = [], loginFailed = [];
@@ -1082,7 +1147,7 @@ if (require.main === module) (async () => {
       console.log(`     If these pages need your login: node tools/login.js --url ${firstTarget}  then re-run.`);
     }
     browser = await launchChromium({ headless: HEADLESS });
-    context = await browser.newContext({ viewport: VIEWPORT, ...CTX_SCHEME });
+    context = await browser.newContext({ viewport: VIEWPORT, reducedMotion: 'reduce', ...CTX_SCHEME });
   } else {
     if (!fs.existsSync(PROFILE_DIR)) {
       console.error(`\n❌  No browser profile at profiles/${PROFILE} — logged-in capture needs one.\n   Run first: node tools/login.js --url ${firstTarget}\n   Capturing a public site? Re-run with --logged-out — no profile needed.\n`);
