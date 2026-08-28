@@ -1,0 +1,20 @@
+{
+  "key": "pricing",
+  "page": "pricing",
+  "concept": null,
+  "pageLabel": "Pricing",
+  "round": "1",
+  "roundDir": "round-1",
+  "intent": "wireframe a simpler hero on the pricing page",
+  "sessionId": "c3dab10b-2d78-4047-b288-3ac98ca460b0",
+  "approaches": [
+    {
+      "base": "01-one-claim-hero",
+      "intent": "wireframe a simpler hero on the pricing page",
+      "desc": "Pricing hero reduced to one price claim (2% + GST, with the platform-fee footnote resolved in place) and one CTA; the 0% 90-day promo drops to a secondary chip instead of being the headline figure.",
+      "sessionId": "c3dab10b-2d78-4047-b288-3ac98ca460b0",
+      "startedAt": "2026-08-28T07:12:20.457Z",
+      "renderedAt": "2026-08-28T07:13:07.091Z"
+    }
+  ]
+}

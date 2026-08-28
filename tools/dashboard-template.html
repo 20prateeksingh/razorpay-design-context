@@ -105,6 +105,20 @@
   #recapbtn { font-size:12px; font-weight:600; background:var(--txt); color:var(--bg); border:0;
               border-radius:999px; height:28px; line-height:28px; padding:0 13px; display:none; transition:background .2s; }
   #recapbtn:hover { background:color-mix(in srgb, var(--txt) 88%, var(--bg)); }
+  /* ── the chat pill (2026-08-28) ──────────────────────────────────────────────────────────────────
+     Until this shipped the drawer could only be reached from CTAs sitting inside the panes, so a
+     visitor who never clicked one never found out there was an AI behind the page at all. This is the
+     one entry point that is on screen the whole time.
+     It wears `.pill` unchanged: the cluster's 28px capsule, its --line-2 hairline, no fill. What says
+     "this belongs to the top bar" is that treatment, not a colour of its own. The open state borrows
+     the Journal pill's exact active recipe (surface step-up plus accent edge), keyed off aria-expanded
+     so the state a screen reader hears and the state the eye sees are one fact.
+     Hidden in local mode the same way #chatdrawer is: there is no hosted server to talk to. */
+  html:not([data-hosted="1"]) #chatpill { display:none; }
+  #chatpill { gap:7px; padding-left:10px; }
+  #chatpill svg { flex:none; width:13px; height:13px; color:var(--dim); }
+  #chatpill[aria-expanded="true"] { background:var(--panel-2); border-color:color-mix(in srgb, var(--accent) 45%, var(--line-2)); }
+  #chatpill[aria-expanded="true"] svg { color:var(--txt); }
   /* onboarding: the tabs and their chrome don't exist yet — hide until the library does */
   #shell.onboarding .tabs, #shell.onboarding .pill, #shell.onboarding .rchip, #shell.onboarding #capbtn, #shell.onboarding #recapbtn { display:none; }
   #shell.onboarding #readypop { display:none; }
@@ -990,6 +1004,21 @@
   .imgwrap { position:relative; display:block; }
   .imgwrap > .fadeimg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:top; border-radius:inherit; }
   .pshot { display:block; width:100%; height:170px; border:1px solid var(--line); border-radius:8px; margin:10px 0; }
+  /* .pshot's geometry, but framing the page itself rather than a render of it, for a design with no
+     preview PNG and no copy of the kit around to make one. Taller, because this is the only look at it
+     there is. White ground for the same reason the screenshots have one: a wireframe is an artifact,
+     and it is not themed by the dashboard that happens to be showing it.
+     The frame is sized in PERCENTAGES of its own box and then scaled back down, so the page lays out
+     at roughly desktop width and is shrunk to fit. Handed the rail's own ~300px the first build put
+     every wireframe into its MOBILE layout, which is not the thing the designer built. 400% plus
+     scale(.25) keeps the arithmetic in the stylesheet: nothing to measure, no resize listener, and it
+     stays right when the rail changes width under --stack-bp. Inert on purpose, because at quarter
+     scale a scroll or a click inside is never what was meant, and "Open ↗ this wireframe" sits right
+     underneath. */
+  .wfframe { display:block; position:relative; width:100%; height:230px; overflow:hidden;
+             border:1px solid var(--line); border-radius:8px; margin:10px 0; background:#fff; }
+  .wfframe iframe { position:absolute; top:0; left:0; width:400%; height:400%; border:0;
+                    transform:scale(.25); transform-origin:0 0; pointer-events:none; }
   .mono-logo { display:flex; align-items:center; justify-content:center; font-weight:700; color:var(--dim);
                background:var(--panel-2); text-transform:uppercase; }
   /* (v2.4.2 F5) an image that never loads falls back to a skel-free monogram tile — a shimmer must never
@@ -1202,6 +1231,14 @@
   <button class="pill jpill" id="journalpill">Journal</button>
   <button id="recapbtn">+ Capture again</button>
   <button id="capbtn"></button>
+  <!-- Last in the cluster, so it sits hard right: the two buttons above are hidden on a hosted copy,
+       which makes this the visible end of the row. The glyph is the "Use it" tab's own screen-with-a-
+       speech-tail rather than a new one, because that tab is where the prompts live and this is where
+       they land now.
+       aria-expanded is kept in step by chatSyncPill() rather than by the click handler alone, because
+       the drawer also opens from CTAs inside the panes and closes on Escape and on its own ×. -->
+  <button class="pill" id="chatpill" aria-controls="chatdrawer" aria-expanded="false"
+          title="Ask an AI that has this whole library behind it"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1.5" y="2" width="13" height="9" rx="2"/><path d="M5 11v2.6L8.2 11"/></svg>Ask this library</button>
   <div id="readypop"></div>
   <div id="recapmenu" role="menu" aria-hidden="true"></div>
 </div>
@@ -1656,6 +1693,15 @@ function chatRestore(){
 }
 
 // ── the drawer ──────────────────────────────────────────────────────────────────────────────────
+// The header pill is the only control that is on screen whichever tab is open, so it is also the only
+// one that can carry the drawer's state. Both ends call this rather than the pill's own click handler
+// setting it, because most opens do not come from the pill at all: a CTA inside a pane, a restored
+// session, Escape, the drawer's ×. A single writer is what stops aria-expanded from drifting.
+function chatSyncPill(){
+  const p = chatEl('chatpill'); if (!p) return;
+  p.setAttribute('aria-expanded', CHAT.open ? 'true' : 'false');
+}
+
 function chatPaint(){
   const it = CHAT_INTENTS[CHAT.intent]; if (!it) return;
   const label = it.chat ? chatPageLabel(CHAT.slug) : '';
@@ -1708,7 +1754,7 @@ function openChat(key, opts){
   if (it.chat) CHAT.slug = o.slug || null;
   if (o.opener) CHAT.opener = o.opener;
   CHAT.open = true; d.classList.add('open');
-  chatPaint(); chatSave();
+  chatPaint(); chatSyncPill(); chatSave();
   if (o.focus === false) return;
   const input = chatEl('chat-input');
   if (!chatEl('chat-form').hidden && input){ input.focus(); const n = input.value.length; try { input.setSelectionRange(n, n); } catch(_){} }
@@ -1716,7 +1762,7 @@ function openChat(key, opts){
 }
 function closeChat(){
   const d = chatEl('chatdrawer'); if (!d) return;
-  CHAT.open = false; d.classList.remove('open'); chatSave();
+  CHAT.open = false; d.classList.remove('open'); chatSyncPill(); chatSave();
   const o = CHAT.opener; CHAT.opener = null;
   // Focus goes back to the control that opened it, unless the rail has re-rendered it out of the
   // document since, which is exactly what happens when the visitor clicks a page card mid-conversation.
@@ -1772,7 +1818,7 @@ async function chatSend(text){
   // aria-busy is the documented way to say "mid-update, hold". It is cleared below, which is the
   // moment the reply is actually worth hearing.
   log.setAttribute('aria-busy', 'true');
-  let ai = -1, frames = 0;
+  let ai = -1, frames = 0, sawWf = false;
   const onFrame = (name, d) => {
     frames++;
     if (name === 'token'){
@@ -1786,9 +1832,17 @@ async function chatSend(text){
     } else if (name === 'wireframe'){
       const u = chatSafeUrl(d && d.url);
       if (u) chatAppend({ t:'wf', url:u, slug:(d && d.slug) || '', label:(d && (d.label || d.slug)) || 'wireframe' });
-      ai = -1;
+      ai = -1; sawWf = true;
+      // The design also belongs in "Your designs" on Home, and the band was built from a list baked
+      // before this wireframe existed. Ask the server for the current one. Fire and forget: whether
+      // the band caught up is not this stream's problem, and initDashboard may not even have run.
+      if (window.loadLiveDesigns) window.loadLiveDesigns();
     } else if (name === 'done'){
       if (d && d.sessionId) CHAT.sessionId = d.sessionId;   // sent on every later message, so the thread continues
+      // Asked a second time, once the turn is actually over. The frame above fires the instant the
+      // file is announced; a listing built a moment later is the one certain to contain it, and a
+      // merge that finds nothing new does nothing at all.
+      if (sawWf && window.loadLiveDesigns) window.loadLiveDesigns();
     } else if (name === 'error'){
       chatAppend({ t:'err', text:(d && d.message) || 'Something went wrong.' }); ai = -1;
     }
@@ -1824,6 +1878,17 @@ async function chatSend(text){
 function mountChat(){
   const d = chatEl('chatdrawer'); if (!d) return;
   chatEl('chat-close').onclick = closeChat;
+  const pill = chatEl('chatpill');
+  if (pill) pill.onclick = () => {
+    // Whichever CTA opened the drawer, the pill is the control the visitor's hands are on now, so it
+    // takes over as the return point: closeChat() sends focus back to CHAT.opener, and without this
+    // a close from the header would throw focus to a chip two panes away.
+    CHAT.opener = pill;
+    if (CHAT.open) closeChat();
+    // No intent of its own. It resumes whatever the drawer was last set to, which after a restore is
+    // the conversation the visitor was already having. 'ask' is only the cold start.
+    else openChat(CHAT.intent || 'ask', { opener:pill });
+  };
   const form = chatEl('chat-form'), input = chatEl('chat-input');
   form.addEventListener('submit', e => { e.preventDefault(); chatSend(input.value); });
   input.addEventListener('keydown', e => {
@@ -4091,7 +4156,13 @@ function initDashboard(){
   // scanWireframes). One card per wireframe FILE — the artifact a designer actually looks at — with the
   // round's parsed intent and the approach's rationale carried into the hover peek and the panel rather
   // than onto the card face, which stays name + meta the way Figma's own file cards do.
-  const WF = Array.isArray(DASH.wireframes) ? DASH.wireframes : [];
+  //
+  // A COPY, not the baked array itself (2026-08-28). DASH.wireframes is only ever the folder as it
+  // stood when build-index last ran, and designs now also arrive at runtime from /api/designs, see
+  // mergeLiveDesigns below. Merging into DASH.wireframes in place would leave the baked payload
+  // quietly disagreeing with the file it was baked from, which is the kind of thing that is only
+  // noticed months later by whatever reads it next.
+  const WF = Array.isArray(DASH.wireframes) ? DASH.wireframes.slice() : [];
   const wfById = {}; WF.forEach(w => { wfById[w.id] = w; });
   // A wireframe belongs to its ROUND KEY, which build-index carries on every item — never rebuilt from
   // w.page here, because an orphan (design work on a page a re-capture retired) has no page and no
@@ -4115,6 +4186,86 @@ function initDashboard(){
     return 'just now';
   }
   const wfCaption = w => w.desc || w.intent || null;
+  // The path a card's tooltip and the panel's route line show. Every source of a wireframe addresses
+  // the same folder differently: build-index bakes `../wireframes/…` because the dashboard sits one
+  // level down, the server serves `/wireframes/…`. Neither prefix is anything a designer needs to
+  // read, so both are trimmed to the one shape the library's own rows use.
+  const wfPath = w => String((w && w.file) || '').replace(/^\.\.\//, '').replace(/^\//, '');
+  // Can a preview PNG still turn up for a design that has none? Only where something can render one.
+  // Previews come from a headless Chromium behind /api/wireframe-shot, and hosted mode refuses every
+  // write endpoint it has, so on a hosted copy the answer is no, for every design in the band, for
+  // ever. Designs written by the chat arrive without a PNG, which turned that from an edge case into
+  // the ordinary one: the band now shows the page itself rather than queueing a render that is certain
+  // to fail and then reporting the failure on every card.
+  const wfCanRender = () => serverMode && document.documentElement.getAttribute('data-hosted') !== '1';
+
+  // ── designs that arrive after the build (2026-08-28) ────────────────────────────────────────────
+  // The band above was built entirely from DASH.wireframes, which build-index's scanWireframes fills
+  // by reading the workspace `wireframes/` folder at BUILD time. A design generated through the chat
+  // is written after that, so it was in the folder and not in the payload: the band and the header's
+  // wireframe count both sat at 0 while the visitor was still looking at the thing they had just
+  // watched get built. /api/designs is the live view of the same shared folder, and these merge into
+  // the same list. They are ordinary library designs, not a second class of object: permanent, visible
+  // to whoever opens this next, and drawn by the same card as everything else.
+  //
+  // Overlap is the NORMAL case, not the exception: map.js rebuilds the dashboard whenever the tree is
+  // newer than the page it is about to serve, so a design generated one visit ago is in both lists by
+  // the next load. Merging is therefore a de-duplicating join, and it has to be one that survives
+  // being run twice on the same answer.
+  function mergeLiveDesigns(items){
+    if (!Array.isArray(items)) return;
+    // Two identity tests, because only the first is guaranteed. Ids are expected to match the baked
+    // scheme (`<key>/<roundDir>/<approach>`), but a card duplicated because two sources named the same
+    // FILE differently would be a visible bug in the band, and the path is the thing that cannot lie.
+    const byPath = {}; WF.forEach(w => { const p = wfPath(w); if (p) byPath[p] = w; });
+    let changed = false;
+    for (const raw of items){
+      // id and file are the two fields nothing downstream survives without: the id keys wfById, the
+      // card and the panel, and the file is what "Open ↗" opens. An item missing either is dropped
+      // rather than drawn as a card that goes nowhere.
+      if (!raw || !raw.id || !raw.file) continue;
+      const cur = wfById[raw.id] || byPath[wfPath(raw)];
+      // Already known: take the fresher fields, but only the ones this payload actually carries. A
+      // plain Object.assign writes an explicit null over a `preview` the build-time scan DID find, and
+      // the card silently loses its picture to a field the endpoint had nothing to say about.
+      if (cur){ for (const k in raw) if (raw[k] != null) cur[k] = raw[k]; changed = true; continue; }
+      const w = Object.assign({}, raw);
+      WF.push(w); wfById[w.id] = w; byPath[wfPath(w)] = w; changed = true;
+    }
+    if (!changed) return;
+    // The same primary key build-index sorts its own list on, so one merged list still reads
+    // newest-first. Array#sort is stable, so anything undated keeps the order it arrived in rather
+    // than being shuffled against its siblings.
+    WF.sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
+    repaintDesigns();
+  }
+
+  // Never throws, and never reports. A copy serving only the library has no such endpoint, an older
+  // server 404s it, and both are the state this dashboard shipped in for months: the band is simply
+  // what build-index baked. `wireframes: []` is a normal answer too, not a failure: it merges nothing.
+  //
+  // Hosted only, tested the same way chatIntentOf() tests it. Not caution: on a local copy the request
+  // has nothing to add and two ways to be noisy. The band there is already live, because map.js
+  // rebuilds the dashboard whenever the wireframes tree is newer than the page it is about to serve, and
+  // the only
+  // thing that writes designs the build has not seen is the chat, which does not exist off a hosted
+  // copy. Meanwhile over file:// a fetch of an absolute path is a scheme error painted straight into
+  // the console (§8.J wants those clean), and on a local server it is a 404 in the network log on
+  // every single load, for an answer nobody was waiting for.
+  async function loadLiveDesigns(){
+    if (document.documentElement.getAttribute('data-hosted') !== '1') return;
+    let j = null;
+    try {
+      const r = await fetch('/api/designs');
+      if (!r.ok) return;
+      j = await r.json();
+    } catch(_){ return; }
+    if (!j || j.ok === false || !Array.isArray(j.wireframes)) return;
+    try { mergeLiveDesigns(j.wireframes); } catch(e){ console.warn('[designs] merge skipped:', (e && e.message) || e); }
+  }
+  // chatSend()'s stream handler is outside this closure and cannot see WF. This is the one hook it
+  // needs: a `wireframe` frame means a design exists that the band has never heard of.
+  window.loadLiveDesigns = loadLiveDesigns;
 
   // "Designs on this page" — rendered on BOTH surfaces a captured page has: the rail panel and the
   // full page doc. Built once here for exactly the reason coveredShapeHtml is: a click from the
@@ -4134,11 +4285,16 @@ function initDashboard(){
   // One card. `data-wf` holds the id; the whole face is a button that opens the panel, exactly like an
   // atlas card — actions live in the panel, never on the face.
   function wfCardHtml(w){
+    // No `data-pend` hook where nothing is going to render into it: saying "rendering preview…" over a
+    // render that will never start reads as a hang, and it is the first thing a visitor sees on a card
+    // for the design they just watched get built. The panel frames the page itself instead.
     const face = w.preview
       ? img2(w.preview, 'shot', '', w.preview)
-      : `<span class="shot pend" data-pend="${esc(w.id)}">${serverMode ? 'rendering preview…' : 'no preview yet'}</span>`;
+      : wfCanRender()
+        ? `<span class="shot pend" data-pend="${esc(w.id)}">rendering preview…</span>`
+        : `<span class="shot pend">${serverMode ? 'no preview yet, open it to see the page' : 'no preview yet'}</span>`;
     const isNew = !!w.concept, isOrphan = !w.page && !w.concept;
-    return `<button class="pg wf" data-wf="${esc(w.id)}" title="${esc(w.file.replace(/^\.\.\//,''))}">
+    return `<button class="pg wf" data-wf="${esc(w.id)}" title="${esc(wfPath(w))}">
       <span class="rnd">Round ${esc(w.round)}</span>
       ${face}
       <span class="m"><span class="nm">${WF_GLYPH}<span>${esc(w.name)}</span></span>
@@ -4192,6 +4348,50 @@ function initDashboard(){
       <div class="atlas wfatlas" id="wfatlas">${WF.map(wfCardHtml).join('')}</div>`;
   }
 
+  // The band's own event wiring. A function rather than a block inside renderHome() because the band
+  // is now rebuilt on its own whenever a design arrives after the page was painted, and the markup and
+  // the handlers have to be re-established together or the second render's cards go dead.
+  function wireWfBand(){
+    // the designs band: same hover-peek / click-panel ladder as the atlas, on its own selection
+    const wfatlas=document.getElementById('wfatlas');
+    if(!wfatlas) return;
+    wireThumbs(wfatlas);
+    wfatlas.addEventListener('mouseover', e=>{ const c=e.target.closest('.pg[data-wf]'); if(c) showWfPeek(wfById[c.dataset.wf], e.clientX, e.clientY); });
+    wfatlas.addEventListener('mousemove', e=>{ if(peekEl.classList.contains('open')) positionPeek(e.clientX, e.clientY); });
+    wfatlas.addEventListener('mouseout', e=>{ if(e.target.closest('.pg[data-wf]')) hidePeek(); });
+    wfatlas.querySelectorAll('.pg[data-wf]').forEach(c=>{
+      c.onclick=()=>{ hidePeek(); openWf(wfById[c.dataset.wf]); };
+      c.addEventListener('focus', ()=>{ const r=c.getBoundingClientRect(); showWfPeek(wfById[c.dataset.wf], r.right-40, r.top); });
+      c.addEventListener('blur', hidePeek);
+    });
+    document.querySelectorAll('#pane-home .filt[data-wff]').forEach(b=>b.onclick=()=>{
+      document.querySelectorAll('#pane-home .filt[data-wff]').forEach(x=>x.classList.toggle('on', x===b));
+      const k=b.dataset.wff;
+      wfatlas.querySelectorAll('.pg[data-wf]').forEach(c=>{ const w=wfById[c.dataset.wf];
+        c.style.display = (k==='all' || (w && wfKeyOf(w)===k)) ? '' : 'none'; });
+    });
+    renderMissingPreviews();
+  }
+
+  // Repaint the two things a merged design changes, and nothing else. A whole renderHome() would be a
+  // one-liner, but a design lands while the visitor is reading the chat drawer with the atlas scrolled
+  // somewhere and a page panel open in the rail: rebuilding the tab underneath them would throw all of
+  // that away for a card that appears two sections further down. If Home has not been rendered yet
+  // there is nothing to patch, and it will read WF when it is.
+  function repaintDesigns(){
+    const sec = document.getElementById('sect-designs');
+    if(!sec) return;
+    sec.innerHTML = wfBandHtml();
+    wireWfBand();
+    // The header's counts are stated once, in the facts row, and they are counts OF this band, so
+    // they move with it. Addressed by name rather than by position: the row's order is a layout
+    // decision and this is not the place to have an opinion about it.
+    const wfFact = document.querySelector('#pane-home [data-fact="wireframes"] .fv');
+    const rdFact = document.querySelector('#pane-home [data-fact="rounds"] .fv');
+    if(wfFact) wfFact.textContent = String(WF.length);
+    if(rdFact) rdFact.textContent = String(new Set(WF.map(x=>wfKeyOf(x)+'/'+x.roundDir)).size);
+  }
+
   // Hover peek — the parsed notes.md line lives here (and in the panel), not on the card face.
   function showWfPeek(w, cx, cy){
     if(!w) return; clearTimeout(peekHideT);
@@ -4211,9 +4411,16 @@ function initDashboard(){
     const cap = wfCaption(w);
     const kb = w.bytes ? `${(w.bytes/1024).toFixed(w.bytes>1024*100?0:1)} KB` : '';
     const sibs = WF.filter(x => wfKeyOf(x)===wfKeyOf(w) && x.roundDir===w.roundDir);
+    // With no PNG to show, show the page. sandbox="" and NOT allow-scripts, the same rule the chat
+    // drawer's own preview follows: a generated wireframe is content, and content does not get to run
+    // script on the dashboard's origin just because the dashboard is the thing framing it.
+    const shot = w.preview
+      ? `<a href="${esc(w.preview)}" target="_blank" aria-label="open full preview">${img2(w.preview,'pshot','',w.preview)}</a>`
+      : (!wfCanRender() && serverMode && w.file
+          ? `<span class="wfframe"><iframe src="${esc(w.file)}" sandbox="" loading="lazy" title="Preview of ${esc(w.name)}"></iframe></span>` : '');
     el.innerHTML = `<div class="railpanel">${CLOSE}<h2>${esc(w.name)}</h2>
-      <div class="route">${esc(w.file.replace(/^\.\.\//,''))}</div>
-      ${w.preview?`<a href="${esc(w.preview)}" target="_blank" aria-label="open full preview">${img2(w.preview,'pshot','',w.preview)}</a>`:''}
+      <div class="route">${esc(wfPath(w))}</div>
+      ${shot}
       <div class="meta">${w.page?`on <b>${esc(w.pageLabel)}</b>`:(w.concept?`a new page — <b>${esc(w.pageLabel)}</b>, not in the product`:`on <b>${esc(w.pageLabel)}</b> — a page no longer in this library`)} · round ${esc(w.round)} · edited ${esc(fmtAgo(w.at)||'—')}${kb?` · ${esc(kb)}`:''}</div>
       ${w.intent?`<div class="desc"><b>This round:</b> ${esc(w.intent)}</div>`:''}
       <div class="desc">${cap && cap!==w.intent ? esc(cap) : '<span class="meta">— no per-approach line in notes.md</span>'}</div>
@@ -4248,7 +4455,7 @@ function initDashboard(){
   // nothing to spawn, so the face says so and the panel's command is the way through.
   let wfShotsStarted = false;
   async function renderMissingPreviews(){
-    if(wfShotsStarted || !serverMode) return;
+    if(wfShotsStarted || !wfCanRender()) return;
     const todo = WF.filter(w => !w.preview);
     if(!todo.length) return;
     wfShotsStarted = true;
@@ -4313,7 +4520,10 @@ function initDashboard(){
     filters.push(`<button class="filt" data-goto="map">Locked (${pad2(lockedTotal)})</button>`);
     // (v2.4.1 §1) the header BAND: tile + title + full-measure description on one row, then the stats
     // row left-aligned beneath it — label on top, mono value under. Body (filters + atlas) below the rule.
-    const fact = (label, value)=>`<div><div class="fl">${esc(label)}</div><div class="fv">${esc(value)}</div></div>`;
+    // data-fact is a handle, not styling: `wireframes` and `rounds` are re-stated by repaintDesigns()
+    // when a design arrives after this row was painted, and it addresses them by name so that adding
+    // or reordering a stat here cannot silently start updating the wrong number.
+    const fact = (label, value)=>`<div data-fact="${esc(label)}"><div class="fl">${esc(label)}</div><div class="fv">${esc(value)}</div></div>`;
     document.getElementById('pane-home').innerHTML = `<div class="homecols">
       <div class="gridwrap">
         <div class="hband">
@@ -4359,26 +4569,7 @@ function initDashboard(){
     atlas.querySelectorAll('.pg[data-ghost]').forEach(c=>{
       c.onclick=()=>{ const n=byId[c.dataset.ghost]; if(n) selectPage(n); };
     });
-    // the designs band: same hover-peek / click-panel ladder as the atlas, on its own selection
-    const wfatlas=document.getElementById('wfatlas');
-    if(wfatlas){
-      wireThumbs(wfatlas);
-      wfatlas.addEventListener('mouseover', e=>{ const c=e.target.closest('.pg[data-wf]'); if(c) showWfPeek(wfById[c.dataset.wf], e.clientX, e.clientY); });
-      wfatlas.addEventListener('mousemove', e=>{ if(peekEl.classList.contains('open')) positionPeek(e.clientX, e.clientY); });
-      wfatlas.addEventListener('mouseout', e=>{ if(e.target.closest('.pg[data-wf]')) hidePeek(); });
-      wfatlas.querySelectorAll('.pg[data-wf]').forEach(c=>{
-        c.onclick=()=>{ hidePeek(); openWf(wfById[c.dataset.wf]); };
-        c.addEventListener('focus', ()=>{ const r=c.getBoundingClientRect(); showWfPeek(wfById[c.dataset.wf], r.right-40, r.top); });
-        c.addEventListener('blur', hidePeek);
-      });
-      document.querySelectorAll('#pane-home .filt[data-wff]').forEach(b=>b.onclick=()=>{
-        document.querySelectorAll('#pane-home .filt[data-wff]').forEach(x=>x.classList.toggle('on', x===b));
-        const k=b.dataset.wff;
-        wfatlas.querySelectorAll('.pg[data-wf]').forEach(c=>{ const w=wfById[c.dataset.wf];
-          c.style.display = (k==='all' || (w && wfKeyOf(w)===k)) ? '' : 'none'; });
-      });
-      renderMissingPreviews();
-    }
+    wireWfBand();
     document.querySelectorAll('#pane-home .filt[data-filt]').forEach(b=>b.onclick=()=>{
       document.querySelectorAll('#pane-home .filt[data-filt]').forEach(x=>x.classList.toggle('on', x===b));
       const f=b.dataset.filt;
@@ -4864,6 +5055,10 @@ node tools/shot.js &lt;file.html&gt; [out.png] [--full]   # preview any local HT
   renderReadiness();
   addEventListener('hashchange', route);
   route();
+  // After the first paint, not before it: the band renders from the baked list straight away and the
+  // live designs merge in when the answer lands, rather than the whole tab waiting on a request that
+  // most copies of this dashboard will not even have an endpoint for. Never awaited, never throws.
+  loadLiveDesigns();
 }
 </script>
 </body>

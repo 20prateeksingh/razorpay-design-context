@@ -13,6 +13,10 @@ primary_region = "sin"          # nearest live region to India; bom (Mumbai) is 
 [env]
   DCK_HOSTED = "1"
   PORT = "8080"
+  # Designs made through the chat panel are permanent and shared: the Razorpay team should see
+  # each other's work. That means they cannot live on the container filesystem, which is wiped on
+  # every deploy, so they go on the volume mounted below.
+  DCK_DESIGNS_DIR = "/data/wireframes"
 
 [http_service]
   internal_port = 8080
@@ -33,6 +37,14 @@ primary_region = "sin"          # nearest live region to India; bom (Mumbai) is 
     timeout = "4s"
     path = "/api/ping"
 
+# A volume is attached to exactly one machine, so this app runs a single machine on purpose.
+# Two machines would each get their own disk and the team would silently see two different
+# libraries. Suspend still applies: an idle machine costs nothing and the volume survives it.
+[mounts]
+  source = "designs"
+  destination = "/data"
+
 [[vm]]
   size = "shared-cpu-1x"
-  memory = "512mb"                 # a read-only file server over a 250MB library
+  memory = "1gb"                   # editing a 24MB snapshot peaks around 114MB of live heap, and
+                                   # two people wireframing at once on 512MB was never tested

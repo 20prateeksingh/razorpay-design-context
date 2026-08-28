@@ -1,0 +1,19 @@
+{
+  "key": "payment-gateway",
+  "page": "payment-gateway",
+  "concept": null,
+  "pageLabel": "Online Payment Gateway in India for Businesses | Razorpay",
+  "round": "1",
+  "roundDir": "round-1",
+  "intent": "Wireframe the payment-gateway page with the sign-up form moved out of the hero into a sticky footer bar.",
+  "sessionId": "84da3d17-5da7-4d80-a26d-febe216bf571",
+  "approaches": [
+    {
+      "base": "01-sticky-signup-bar",
+      "intent": "Wireframe the payment-gateway page with the sign-up form moved out of the hero into a sticky footer bar.",
+      "desc": "Moves the hero sign-up form out of the top fold into a persistent footer bar, so the offer stays reachable across all 10,714px of the page instead of only the first screen.",
+      "sessionId": "84da3d17-5da7-4d80-a26d-febe216bf571",
+      "startedAt": "2026-08-28T07:36:03.902Z"
+    }
+  ]
+}

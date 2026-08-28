@@ -6,17 +6,27 @@
  * It is the hosted stand-in for skills/wireframe-on-snapshot/, which assumes a designer with a
  * terminal, their own workspace and write access to everything in it. A visitor on a public URL
  * has none of those, so the same workflow is re-cut as server-side tools: the agent reads the
- * library, copies a snapshot into a per-visitor scratch dir, does the DOM surgery there, and hands
+ * library, copies a snapshot into the shared designs tree, does the DOM surgery there, and hands
  * back a URL. The library itself is never opened for writing by anything in this file.
  *
  * Routes (wired in map.js, which owns the server):
  *   GET  /api/chat/capabilities   → {ok, enabled, reason, model}
  *   POST /api/chat                → SSE: token · tool · wireframe · done · error
- *   GET  /session/:sid/wireframes/… → the visitor's own generated HTML, path-guarded
+ *   GET  /api/designs             → {ok, wireframes:[…]} — every design in the shared tree
  *
- * THE INVARIANT, above every other line here: design-context/ is READ-ONLY. Every path this file
- * opens for writing is built from SESSIONS_ROOT and re-checked against it after normalisation. The
- * library is captured fact and a stranger on the internet must not be able to move a byte of it.
+ * DESIGNS ARE SHARED, AND THEY ARE KEPT. A wireframe is not a per-visitor artifact: this library is
+ * read by a team, and one person's approach has to still be there for the next person who opens the
+ * dashboard. So a wireframe lands in ONE directory (DESIGNS_DIR, below) — the same tree the
+ * designer's own skill writes to and build-index's scanWireframes already scans — and nothing in
+ * this file ever deletes one. A session is a conversation, not a scope: the conversation expires,
+ * its designs do not.
+ *
+ * THE WRITE INVARIANT, above every other line here: design-context/ is READ-ONLY, and DESIGNS_DIR is
+ * the ONLY directory anything in this file may write to. Every write path is built from DESIGNS_DIR
+ * and re-checked against it after normalisation, and the root itself is refused at boot if it points
+ * inside the library. The library is somebody else's site recorded as fact, and a stranger on the
+ * internet must not be able to move a byte of it. This write path is also the single deliberate hole
+ * in hosted mode's blanket POST refusal (see map.js), which is why it is drawn this tightly.
  *
  * Three things a reader usually wants to know up front:
  *
@@ -34,12 +44,24 @@
 
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
 const crypto = require('crypto');
 
 const KIT = path.join(__dirname, '..');
 const LIB = path.join(KIT, 'design-context');
 const SKILL_MD = path.join(KIT, 'skills', 'wireframe-on-snapshot', 'SKILL.md');
+
+// ── Where designs live ─────────────────────────────────────────────────────────────────────────
+// One directory, shared by everybody, and the ONLY thing this file writes to. The default is the
+// workspace's own wireframes/ — the tree the wireframe skill writes by hand, that map.js already
+// serves at /wireframes/… and that build-index's scanWireframes already scans for the "Your designs"
+// band. That is the whole point of the default: a wireframe made in the chat panel is not a second
+// class of artifact, it is a design in the same folder under the same name as one made at a terminal.
+//
+// The env var exists because a container filesystem does not survive a deploy and two machines do
+// not share one. Whatever the answer to that turns out to be — a mounted volume, a synced directory —
+// it gets wired in by pointing DCK_DESIGNS_DIR at it, and nothing in this file changes. Resolved
+// once, absolute, so every guard below compares against a path that cannot shift under it.
+const DESIGNS_DIR = path.resolve(process.env.DCK_DESIGNS_DIR || path.join(KIT, 'wireframes'));
 
 // ── Model and the ceilings around it ───────────────────────────────────────────────────────────
 const MODEL = 'claude-opus-5';
@@ -65,15 +87,16 @@ const DAILY_LIMIT = 150;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 // ── Sessions ───────────────────────────────────────────────────────────────────────────────────
-// One scratch dir per visitor under the OS temp dir, never inside the workspace. The id is server
-// generated (crypto.randomUUID) and opaque: a client-supplied id would be a path fragment chosen by
-// a stranger, which is the shape of every directory-traversal bug ever written. Everything a
-// session holds is ephemeral by design, so the sweep below can be blunt.
-const SESSIONS_ROOT = path.join(os.tmpdir(), 'dck-sessions');
+// A session is one conversation: its history, which wireframe is open, and which round it was given
+// on each page. It holds no files. The id is server generated (crypto.randomUUID) and opaque, and it
+// travels onto a design only as PROVENANCE — which conversation drew this — never as a scope. Two
+// visitors reading the same dashboard see the same designs, and always will.
+//
+// Expiring a session drops the conversation and nothing else. There is no TTL on a design and no
+// sweep that could grow into one: the tree this file writes to is permanent by requirement.
 const SESSION_TTL_MS = 2 * 60 * 60 * 1000;
 const SWEEP_EVERY_MS = 10 * 60 * 1000;
-// A UUID and nothing else. Checked before the id is ever joined onto a path, so the path guard
-// further down is the second line of defence rather than the only one.
+// A UUID and nothing else, checked on every client-supplied id before it is used for anything.
 const SID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 // Conversation history lives in this process, keyed by session id. Bounded, because an unbounded
@@ -91,7 +114,7 @@ const WRAPPER_CHARS = 1500;
 const SELECTOR_MAX_DEPTH = 3;
 const EDIT_HTML_MAX_BYTES = 200 * 1024;
 
-const sessions = new Map();   // sid → { id, dir, createdAt, lastSeenAt, messages, rounds, current, busy }
+const sessions = new Map();   // sid → { id, createdAt, lastSeenAt, ask, messages, rounds, current, busy }
 const ipHits = new Map();     // ip → [timestamp, …] within IP_WINDOW_MS
 let dayCount = 0;
 let dayStartedAt = Date.now();
@@ -163,6 +186,24 @@ function workspaceId() {
   return (process.env.ANTHROPIC_WORKSPACE_ID || '').trim() || null;
 }
 
+/**
+ * The one configuration mistake that would break the write invariant, caught before it can.
+ *
+ * DCK_DESIGNS_DIR is an operator's string, and pointing it at design-context/ (or at a directory
+ * containing it) would quietly turn every wireframe into a write inside the read-only library —
+ * the exact thing the rest of this file is shaped to make impossible. There is no safe way to
+ * proceed from that, so chat reports itself off and says which variable is wrong, the same way it
+ * does for a missing key. Returns a reason, or null when the root is fine.
+ */
+function designsRootFault() {
+  const lib = path.resolve(LIB);
+  const dir = DESIGNS_DIR;
+  if (dir === lib || dir.startsWith(lib + path.sep) || lib.startsWith(dir + path.sep)) {
+    return `DCK_DESIGNS_DIR is set to ${dir}, which overlaps the read-only library at ${lib}. Point it at a directory outside design-context/.`;
+  }
+  return null;
+}
+
 function capabilities() {
   const key = apiKey();
   const reason =
@@ -171,6 +212,7 @@ function capabilities() {
     !anthropicSdk() ? 'The @anthropic-ai/sdk package is not installed on the server. Run: npm install --prefix tools' :
     !cheerio() ? 'The cheerio package is not installed on the server. Run: npm install --prefix tools' :
     !lofiBlocks() ? 'skills/wireframe-on-snapshot/SKILL.md is missing, so the lofi style blocks cannot be read from their canon.' :
+    designsRootFault() ||
     null;
   return { ok: true, enabled: !reason, reason, model: MODEL };
 }
@@ -327,12 +369,13 @@ const TOOLS = [
   },
   {
     name: 'start_wireframe',
-    description: 'Copy a captured page into this visitor\'s scratch space as a new wireframe approach, with the lofi-mode and lofi-kit style blocks already injected, so the whole page renders at wireframe fidelity. Call this once per approach before editing. Calling it again starts a second approach in the same round on the same page.',
+    description: 'Copy a captured page into the shared designs folder as a new wireframe approach, with the lofi-mode and lofi-kit style blocks already injected, so the whole page renders at wireframe fidelity. Call this once per approach before editing. Calling it again starts a second approach in the same round on the same page. What you make here is kept and is visible to everyone who opens this dashboard, so name it as you would a file a colleague will open.',
     input_schema: {
       type: 'object',
       properties: {
         slug: { type: 'string', description: 'Page slug to build on, exactly as returned by list_pages.' },
         approach_name: { type: 'string', description: 'Two or three words naming the model this approach explores, e.g. "inline compare" or "progressive disclosure". Becomes the filename.' },
+        rationale: { type: 'string', description: 'Optional. One line saying what this approach does differently and why, in plain words. It is written into the round notes and becomes the caption under the design card. Leave it out if you will only know once the approach is drawn: render_wireframe takes the final one.' },
       },
       required: ['slug', 'approach_name'], additionalProperties: false,
     },
@@ -352,8 +395,14 @@ const TOOLS = [
   },
   {
     name: 'render_wireframe',
-    description: 'Finish the current wireframe and get the URL the visitor can open. Call this once the approach is fully drawn. The panel shows it to them as soon as you call it.',
-    input_schema: { type: 'object', properties: {}, additionalProperties: false },
+    description: 'Finish the current wireframe and get the URL the visitor can open. Call this once the approach is fully drawn. The panel shows it to them as soon as you call it, and it joins the dashboard\'s designs band for everyone.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        rationale: { type: 'string', description: 'One line saying what this approach does differently and why. It is written into the round notes and becomes the caption under the design card, so write it for a colleague opening the folder next month, not for the visitor reading your reply. Replaces the one start_wireframe was given, if any.' },
+      },
+      additionalProperties: false,
+    },
   },
 ];
 
@@ -578,9 +627,9 @@ function toolFindInPage(input) {
   };
 }
 
-// ── Session scratch space ──────────────────────────────────────────────────────────────────────
-function sessionDir(sid) { return path.join(SESSIONS_ROOT, sid); }
-
+// ── Conversations ──────────────────────────────────────────────────────────────────────────────
+// In memory only. Nothing here owns a file, so dropping a session frees a history and takes no
+// design with it: that separation is the whole reason this block is short now.
 function newSession() {
   // Evict the oldest rather than let the map grow without bound. A hosted demo has no logout, so
   // nothing else ever removes a session before the sweep does.
@@ -590,9 +639,10 @@ function newSession() {
     if (oldest) dropSession(oldest.id);
   }
   const id = crypto.randomUUID();
-  const dir = sessionDir(id);
-  fs.mkdirSync(dir, { recursive: true });
-  const sess = { id, dir, createdAt: Date.now(), lastSeenAt: Date.now(), messages: [], rounds: new Map(), current: null, busy: false };
+  // `ask` is the visitor's current message, held for exactly as long as the turn that is running:
+  // it is what gets written down as a design's intent, and a design has to record what was actually
+  // asked for rather than a guess reconstructed from a filename afterwards.
+  const sess = { id, createdAt: Date.now(), lastSeenAt: Date.now(), ask: null, messages: [], rounds: new Map(), current: null, busy: false };
   sessions.set(id, sess);
   return sess;
 }
@@ -601,37 +651,265 @@ function getSession(sid) {
   const s = sessions.get(sid);
   if (!s) return null;
   s.lastSeenAt = Date.now();
-  // The dir can be gone even while the session object lives: the OS temp dir is not ours and gets
-  // cleaned under us. Recreate rather than fail, so a long conversation survives it.
-  try { fs.mkdirSync(s.dir, { recursive: true }); } catch (_) {}
   return s;
 }
-function dropSession(sid) {
-  sessions.delete(sid);
-  const dir = sessionDir(sid);
-  // Belt and braces: rm only ever runs on SESSIONS_ROOT/<uuid>, checked twice.
-  if (!SID_RE.test(sid)) return;
-  if (path.dirname(dir) !== SESSIONS_ROOT) return;
-  try { fs.rmSync(dir, { recursive: true, force: true }); } catch (_) {}
-}
+function dropSession(sid) { sessions.delete(sid); }
 
-// Sweep on an interval, unref'd so it can never be the reason the process stays alive. Ages are read
-// off the directory rather than the in-memory session, so dirs orphaned by a restart go too.
+// Sweep on an interval, unref'd so it can never be the reason the process stays alive. This expires
+// CONVERSATIONS. It has never deleted a design and must not learn how: the designs tree is shared and
+// permanent, and a visitor coming back next week is meant to find last week's work still there.
 function sweepSessions() {
   const cutoff = Date.now() - SESSION_TTL_MS;
   for (const [sid, s] of sessions) if (s.lastSeenAt < cutoff) dropSession(sid);
-  let entries = [];
-  try { entries = fs.readdirSync(SESSIONS_ROOT, { withFileTypes: true }); } catch { return; }
-  for (const e of entries) {
-    if (!e.isDirectory() || !SID_RE.test(e.name)) continue;
-    if (sessions.has(e.name)) continue;
-    let at = 0;
-    try { at = fs.statSync(path.join(SESSIONS_ROOT, e.name)).mtimeMs; } catch { continue; }
-    if (at < cutoff) dropSession(e.name);
-  }
 }
-try { fs.mkdirSync(SESSIONS_ROOT, { recursive: true }); } catch (_) {}
 setInterval(sweepSessions, SWEEP_EVERY_MS).unref();
+
+// ── The designs tree ───────────────────────────────────────────────────────────────────────────
+// Layout, identical to the one skills/wireframe-on-snapshot/ writes by hand and build-index reads:
+//
+//   <DESIGNS_DIR>/<page-slug>/round-<n>/<NN>-<approach>.html   design work on a captured page
+//   <DESIGNS_DIR>/new/<concept>/round-<n>/<NN>-<approach>.html a page that does not exist yet
+//   <DESIGNS_DIR>/<…>/round-<n>/notes.md                       the round, in prose, for the dashboard
+//   <DESIGNS_DIR>/<…>/round-<n>/.round.json                    the same facts, exact, for this server
+//
+// Only the page-slug branch is written from here today: every wireframe the agent can start is built
+// on a captured snapshot. The new/ branch is read, because a designer working the same tree at a
+// terminal does write it, and this server lists the whole tree rather than only its own half.
+const ROUND_DIR_RE = /^round-(\d+)$/i;
+const DESIGN_SKIP = /^(\.|node_modules$)/;   // .DS_Store, .gitkeep, dotdirs — build-index's WF_SKIP
+
+/**
+ * THE write guard. Every mkdir and every writeFile in this file goes through it first.
+ *
+ * root + separator, never the bare root: a bare prefix test also accepts a SIBLING whose name merely
+ * starts with the root ("wireframes-old/"), which is a real leak rather than a nicety. Both sides are
+ * resolved, so a path assembled out of a `..` segment is compared in its settled form.
+ */
+function withinRoot(root, abs) {
+  const r = path.resolve(root);
+  const p = path.resolve(abs);
+  return p === r || p.startsWith(r + path.sep);
+}
+function withinDesigns(abs) { return !designsRootFault() && withinRoot(DESIGNS_DIR, abs); }
+
+function readdirSafe(dir) {
+  try { return fs.readdirSync(dir, { withFileTypes: true }); } catch { return []; }
+}
+
+/**
+ * Claim a round directory for this session's work on one page.
+ *
+ * A round is a sitting: one conversation's set of approaches on one page. The tree is shared, so the
+ * numbering has to be read off the disk rather than off this process — the highest round on a page
+ * may well have been written by somebody else's conversation, or by a designer at a terminal before
+ * this server ever started, and dropping this session's approaches into it would file one person's
+ * work under another's heading.
+ *
+ * mkdir WITHOUT recursive on the leaf is the interesting line: it throws EEXIST rather than
+ * succeeding silently, which is what makes the claim atomic. Two visitors starting on the same page
+ * in the same second both compute round-4, one of them gets EEXIST, and the loop hands them round-5.
+ * With `recursive: true` they would both "succeed" and interleave into one directory.
+ */
+function claimRound(key) {
+  const base = path.join(DESIGNS_DIR, ...key.split('/'));
+  if (!withinDesigns(base)) return null;
+  let n = 0;
+  for (const e of readdirSafe(base)) {
+    const m = e.isDirectory() && ROUND_DIR_RE.exec(e.name);
+    if (m) n = Math.max(n, parseInt(m[1], 10));
+  }
+  fs.mkdirSync(base, { recursive: true });
+  for (let i = 0; i < 20; i++) {
+    const dir = path.join(base, `round-${n + 1 + i}`);
+    if (!withinDesigns(dir)) return null;
+    try { fs.mkdirSync(dir); return { dir, round: String(n + 1 + i), roundDir: `round-${n + 1 + i}` }; }
+    catch (e) { if (e.code !== 'EEXIST') throw e; }
+  }
+  return null;
+}
+
+// ── A round's written record ───────────────────────────────────────────────────────────────────
+// Two files, one truth. .round.json is what this server reads back: exact strings, no parsing, so
+// /api/designs reports the intent the visitor actually typed rather than a guess. notes.md is
+// RENDERED from it on every write, for the two readers that only speak markdown — build-index's
+// scanWireframes, which parses a round's notes for the baked dashboard's captions, and the next
+// person to open the folder. Because notes.md is generated from the json and never read back, the
+// pair cannot drift: there is one writer and one source.
+//
+// Per round dir, not per tree: a round belongs to exactly one conversation (see claimRound), so the
+// read-modify-write below has a single writer by construction. One shared index file would need a
+// lock, and would lose an entry the first time two visitors rendered at once.
+const ROUND_JSON = '.round.json';
+
+function readRound(roundAbs) {
+  try { return JSON.parse(fs.readFileSync(path.join(roundAbs, ROUND_JSON), 'utf8')); }
+  catch { return null; }
+}
+
+// One line, whitespace collapsed, cut at a word boundary — the same shape build-index's wfCleanLine
+// produces, because these values land in the same caption slot on the same card.
+function oneLine(s, max = 200) {
+  const t = String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
+  if (!t) return null;
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max);
+  const sp = cut.lastIndexOf(' ');
+  return (sp > max * 0.6 ? cut.slice(0, sp) : cut) + '…';
+}
+
+function writeRound(roundAbs, rec) {
+  const jsonAt = path.join(roundAbs, ROUND_JSON);
+  const notesAt = path.join(roundAbs, 'notes.md');
+  if (!withinDesigns(jsonAt) || !withinDesigns(notesAt)) return;
+  try {
+    fs.writeFileSync(jsonAt, JSON.stringify(rec, null, 2), 'utf8');
+    fs.writeFileSync(notesAt, renderNotes(rec), 'utf8');
+  } catch (_) { /* the wireframe itself is on disk and openable; its notes are not worth failing a turn over */ }
+}
+
+/**
+ * .round.json → notes.md, in the shapes build-index's parsers already read.
+ *
+ * wfRoundIntent takes the first real paragraph under the heading as the round's intent, and
+ * wfApproachDesc matches a `- **<base>** — …` bullet to an approach. Writing exactly those two
+ * shapes is what makes a chat-made round caption its cards in the baked dashboard the same way a
+ * hand-written round does. Verified against scanWireframes, not assumed.
+ */
+function renderNotes(rec) {
+  const head = rec.pageLabel ? `${rec.pageLabel} — round ${rec.round}` : `Round ${rec.round}`;
+  const lines = [`# ${head}`, ''];
+  if (rec.intent) lines.push(rec.intent, '');
+  lines.push('## Approaches', '');
+  for (const a of rec.approaches || []) {
+    lines.push(a.desc ? `- **${a.base}** — ${a.desc}` : `- **${a.base}**`);
+  }
+  lines.push('', `Built in the dashboard's chat panel on a copy of the captured ${rec.page || rec.concept || 'page'} snapshot. The library itself was not touched.`, '');
+  return lines.join('\n');
+}
+
+// ── Reading the tree back: the design card ─────────────────────────────────────────────────────
+// map.js serves DESIGNS_DIR at /wireframes/…, so a design's URL is its path under the root with each
+// segment encoded. Built in one place, and start_wireframe's own reply, the SSE event and this
+// endpoint all take the string from here: two expressions producing "the same" URL is how they stop
+// being the same.
+function designUrl(rel) {
+  return '/wireframes/' + rel.split('/').map(encodeURIComponent).join('/');
+}
+
+// `02-attention-first` → `Attention first`. Byte-for-byte build-index's wfApproachName, because this
+// is the string on the face of a card that sits next to cards it built.
+function approachName(base) {
+  const s = base.replace(/^(\d+)[-_.]?\s*/, '').replace(/[-_]+/g, ' ').trim();
+  if (!s) return base;
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+function approachIdx(base) { const m = /^(\d+)/.exec(base); return m ? parseInt(m[1], 10) : 999; }
+
+function pageLabelFor(slug) {
+  const p = pageEntry(slug);
+  return p ? (p.displayLabel || p.label || p.title || slug) : slug;
+}
+
+/**
+ * Every design in the shared tree, newest first, in build-index scanWireframes' item shape.
+ *
+ * Same shape on purpose: these render in the same band, from the same template, as the designs
+ * build-index bakes into dashboard.html, and a card that is missing a field its neighbours have is a
+ * card that renders wrong. The differences are the ones the served case forces. `file` is a rooted
+ * URL rather than scanWireframes' `../wireframes/…` relative path, because a design opened from the
+ * live server may be requested from any route. `intent` and `desc` come out of .round.json, which
+ * this server wrote at the moment the work happened — never re-derived from a filename, which can
+ * only ever tell you what the approach was called.
+ *
+ * A round written by a designer at a terminal carries its rationale in notes.md instead, in prose
+ * this does not parse: build-index owns those heuristics and a second copy of them here would be a
+ * second thing to drift. Those rounds report intent/desc null rather than a worse guess, which is
+ * the library's own "measured or absent" rule applied to itself.
+ */
+function scanDesigns() {
+  const items = [];
+
+  const scanRound = (key, roundAbs, roundDir, ctx) => {
+    const files = readdirSafe(roundAbs).filter(e => e.isFile() && !DESIGN_SKIP.test(e.name)).map(e => e.name);
+    // `.baked.html` is lofi-bake.js's Figma-bound derivative of a sibling wireframe, not a design of
+    // its own: counting it would show every baked approach twice.
+    const htmls = files.filter(f => /\.html?$/i.test(f) && !/\.baked\.html?$/i.test(f)).sort();
+    if (!htmls.length) return;
+    const rec = readRound(roundAbs);
+    const byBase = {};
+    for (const a of (rec && rec.approaches) || []) byBase[a.base] = a;
+    const rel = `${key}/${roundDir}`;
+    const hasNotes = files.some(f => /^notes\.md$/i.test(f));
+
+    for (const nameHtml of htmls) {
+      const abs = path.join(roundAbs, nameHtml);
+      if (!withinDesigns(abs)) continue;
+      const base = nameHtml.replace(/\.html?$/i, '');
+      const lower = base.toLowerCase();
+      const exact = (suffix) => { const hit = files.find(f => f.toLowerCase() === lower + suffix); return hit ? designUrl(`${rel}/${hit}`) : null; };
+      const views = files.filter(f => {
+        const l = f.toLowerCase();
+        return l.startsWith(lower + '.') && /\.(png|jpe?g|webp)$/i.test(l) && l !== lower + '.preview.png' && l !== lower + '.png';
+      }).sort().map(f => ({ label: f.slice(base.length + 1).replace(/\.(png|jpe?g|webp)$/i, '').replace(/[-_.]+/g, ' '), src: designUrl(`${rel}/${f}`) }));
+      let bytes = 0, at = null;
+      try { const st = fs.statSync(abs); bytes = st.size; at = st.mtime.toISOString(); } catch { continue; }
+      const a = byBase[base] || null;
+      items.push({
+        id: `${key}/${roundDir}/${base}`, key,
+        page: ctx.page, concept: ctx.concept, pageLabel: ctx.label,
+        round: String(roundDir).replace(/^round-/i, ''), roundDir,
+        approach: base, idx: approachIdx(base), name: approachName(base),
+        file: designUrl(`${rel}/${nameHtml}`), preview: exact('.preview.png') || exact('.png'), views,
+        notes: hasNotes ? designUrl(`${rel}/notes.md`) : null,
+        at, bytes,
+        intent: (a && a.intent) || (rec && rec.intent) || null,
+        desc: (a && a.desc) || null,
+        // Deliberately NOT the session id, though .round.json keeps it on disk as provenance.
+        //
+        // A session id is a live handle: POST /api/chat with one resumes that conversation and its
+        // history, for as long as it is in memory. /api/designs is public, unauthenticated and
+        // shared, so publishing the id there would hand every visitor a working key to somebody
+        // else's session for the whole TTL window. Nothing in the dashboard reads it, so it costs
+        // nothing to withhold. If a "who made this" field is ever wanted, it should carry a name a
+        // person chose, not an identifier that also authenticates.
+      });
+    }
+  };
+
+  const scanKey = (key, ctx) => {
+    const base = path.join(DESIGNS_DIR, ...key.split('/'));
+    if (!withinDesigns(base)) return;
+    for (const e of readdirSafe(base)) {
+      if (!e.isDirectory() || !ROUND_DIR_RE.test(e.name)) continue;
+      scanRound(key, path.join(base, e.name), e.name, ctx);
+    }
+  };
+
+  for (const e of readdirSafe(DESIGNS_DIR)) {
+    if (!e.isDirectory() || DESIGN_SKIP.test(e.name)) continue;
+    if (e.name === 'new') {
+      for (const c of readdirSafe(path.join(DESIGNS_DIR, 'new'))) {
+        if (!c.isDirectory() || DESIGN_SKIP.test(c.name)) continue;
+        scanKey(`new/${c.name}`, { page: null, concept: c.name, label: approachName(c.name) });
+      }
+    } else {
+      // Three cases, and the third is the one that bites: a folder matching a captured page, a
+      // concept under new/ (above), and a folder matching NEITHER — design work on a page a
+      // re-capture has since retired. That one keeps page and concept null on purpose. It is not a
+      // new page and it has no snapshot to link to, and the band says so rather than guessing.
+      scanKey(e.name, { page: pageEntry(e.name) ? e.name : null, concept: null, label: pageLabelFor(e.name) });
+    }
+  }
+
+  // Newest first, the way Figma's Recents reads. Every tie is broken, so the order is TOTAL: two
+  // files written in the same second must not swap places between two requests.
+  items.sort((a, b) => (b.at || '').localeCompare(a.at || '')
+    || a.key.localeCompare(b.key)
+    || b.roundDir.localeCompare(a.roundDir)
+    || b.idx - a.idx
+    || b.approach.localeCompare(a.approach));
+  return items;
+}
 
 // ── Tool: start_wireframe ──────────────────────────────────────────────────────────────────────
 function kebab(s, fallback) {
@@ -644,23 +922,31 @@ function kebab(s, fallback) {
 function toolStartWireframe(sess, input) {
   const blocks = lofiBlocks();
   if (!blocks) return { error: 'The lofi style blocks could not be read from SKILL.md, so a wireframe cannot be started.' };
+  const fault = designsRootFault();
+  if (fault) return { error: `The designs folder is misconfigured on this server, so nothing can be written: ${fault}` };
   const slug = String(input.slug || '').trim();
   const entry = pageEntry(slug);
   if (!entry) return { error: `No page "${slug}" in this library. Call list_pages for the real slugs.` };
 
-  // One round per page per session. A hosted conversation is one sitting, so its work is one round;
-  // the round-N segment stays in the path because a visitor's file should read the same as a
-  // designer's on disk, and the skill's tree shape is the thing being emulated.
+  // One round per page per conversation, claimed off the disk the first time this conversation
+  // touches this page. The tree is shared: rounds 1 to 3 on this page may be somebody else's work,
+  // or a designer's from before this server booted, and this session's approaches belong under
+  // their own heading rather than appended to a sitting that was not theirs.
   let round = sess.rounds.get(slug);
-  if (!round) { round = { n: 1, files: [] }; sess.rounds.set(slug, round); }
-  const dir = path.join(sess.dir, 'wireframes', slug, `round-${round.n}`);
-  const name = `${String(round.files.length + 1).padStart(2, '0')}-${kebab(input.approach_name, 'approach')}.html`;
-  const abs = path.join(dir, name);
-  if (!withinSession(sess, abs)) return { error: 'Refusing to write outside the session scratch space.' };
+  if (!round) {
+    try { round = claimRound(slug); }
+    catch (e) { return { error: `A round folder for "${slug}" could not be created: ${e.message.split('\n')[0]}` }; }
+    if (!round) return { error: `A round folder for "${slug}" could not be created in the designs directory.` };
+    round.approaches = [];
+    sess.rounds.set(slug, round);
+  }
+  const name = `${String(round.approaches.length + 1).padStart(2, '0')}-${kebab(input.approach_name, 'approach')}.html`;
+  const abs = path.join(round.dir, name);
+  // The write invariant, checked on the assembled path rather than trusted from its parts.
+  if (!withinDesigns(abs)) return { error: 'Refusing to write outside the designs directory.' };
 
   const src = path.join(LIB, 'pages', slug, 'page.html');
   try {
-    fs.mkdirSync(dir, { recursive: true });
     // Buffers, not a string. The injection is a splice at a byte offset, and decoding 24MB of UTF-8
     // into a JS string to do it would double the peak for nothing. Buffer.lastIndexOf takes the
     // needle directly, and </body> is ASCII so the offset is exact.
@@ -674,12 +960,43 @@ function toolStartWireframe(sess, input) {
     return { error: `The snapshot for "${slug}" could not be copied: ${e.message.split('\n')[0]}` };
   }
 
-  round.files.push(name);
-  sess.current = { slug, round: round.n, name, abs };
-  const rel = `wireframes/${slug}/round-${round.n}/${name}`;
+  const base = name.replace(/\.html$/, '');
+  // Written down NOW, while the message that asked for it is still the message being answered.
+  // Reconstructing this afterwards would mean reading it back off a filename, which records what the
+  // approach was called and nothing about what was wanted.
+  round.approaches.push({
+    base,
+    intent: oneLine(sess.ask),
+    desc: oneLine(input.rationale),
+    sessionId: sess.id,
+    startedAt: new Date().toISOString(),
+  });
+  writeRound(round.dir, roundRecord(sess, slug, round));
+
+  sess.current = { slug, key: slug, round, name, base, abs };
+  const rel = `${slug}/${round.roundDir}/${name}`;
   return {
     content: `Started ${rel} from the captured ${slug} snapshot. The whole page is now at wireframe fidelity: lofi-mode and lofi-kit are injected verbatim, so the shell, the nav and every image are grey. Change only your target area, reuse the page's own components and its own real data, and tag anything you invent. edit_wireframe now acts on this file. Use find_in_page on "${slug}" to get selectors.`,
     summary: `Copied the ${slug} snapshot into ${rel}.`,
+  };
+}
+
+// The round, as it stands right now, for writeRound to persist. Rebuilt from the session on every
+// write rather than mutated in place, so the file on disk is always the whole record and never a
+// half-applied patch.
+function roundRecord(sess, key, round) {
+  return {
+    key,
+    page: pageEntry(key) ? key : null,
+    concept: null,
+    pageLabel: pageLabelFor(key),
+    round: round.round,
+    roundDir: round.roundDir,
+    // The round's intent is the first thing that was asked of it. Later approaches in the same
+    // sitting carry their own on the approach, which is what /api/designs prefers.
+    intent: (round.approaches[0] && round.approaches[0].intent) || null,
+    sessionId: sess.id,
+    approaches: round.approaches,
   };
 }
 
@@ -707,7 +1024,7 @@ function toolEditWireframe(sess, input) {
     return { error: `That html payload is ${Math.round(Buffer.byteLength(html, 'utf8') / 1024)}KB, over the ${EDIT_HTML_MAX_BYTES / 1024}KB limit for one edit. Split it into several edits.` };
   }
   const { abs, slug, round, name } = sess.current;
-  if (!withinSession(sess, abs)) return { error: 'Refusing to edit outside the session scratch space.' };
+  if (!withinDesigns(abs)) return { error: 'Refusing to edit outside the designs directory.' };
 
   let $;
   try { $ = loadSnapshotFile(abs); }
@@ -757,60 +1074,58 @@ function toolEditWireframe(sess, input) {
     ? ` NOTE: ${found.length} elements matched that selector and the edit went to the first. If that was not the one you meant, use a more specific selector.`
     : '';
   return {
-    content: `Done: ${did} ${selector} in round-${round}/${name}.${note}${ambiguity}`,
+    content: `Done: ${did} ${selector} in ${round.roundDir}/${name}.${note}${ambiguity}`,
     summary: `${op} on ${clip(selector, 60).text}${found.length > 1 ? ` (${found.length} matched, first edited)` : ''}.`,
   };
 }
 
 // ── Tool: render_wireframe ─────────────────────────────────────────────────────────────────────
-function toolRenderWireframe(sess, emit) {
+function toolRenderWireframe(sess, input, emit) {
   if (!sess.current) return { error: 'No wireframe is open. Call start_wireframe first.' };
-  const { slug, round, name } = sess.current;
-  const url = `/session/${sess.id}/wireframes/${encodeURIComponent(slug)}/round-${round}/${encodeURIComponent(name)}`;
-  const label = `${(pageEntry(slug) && (pageEntry(slug).displayLabel || pageEntry(slug).label)) || slug} · round ${round} · ${name.replace(/\.html$/, '')}`;
-  emit('wireframe', { url, slug, label });
+  const { slug, round, name, base } = sess.current;
+
+  // The rationale is worth more here than it was at start_wireframe: the approach now exists, and
+  // the model can say what it turned out to be rather than what it meant to try. Overwrite, but only
+  // when something was actually given, so a render with no rationale does not erase the one the
+  // start already recorded.
+  const desc = oneLine(input && input.rationale);
+  const a = round.approaches.find(x => x.base === base);
+  if (a) {
+    if (desc) a.desc = desc;
+    a.renderedAt = new Date().toISOString();
+    writeRound(round.dir, roundRecord(sess, slug, round));
+  }
+
+  // One item, built by the same scanner the dashboard's band reads, so the card the panel adds now
+  // and the card a reload draws are the same card. Scanning the tree rather than assembling an
+  // object by hand is what keeps them the same: this way there is no second definition of the shape.
+  const id = `${slug}/${round.roundDir}/${base}`;
+  const item = scanDesigns().find(w => w.id === id) || null;
+  const url = item ? item.file : designUrl(`${slug}/${round.roundDir}/${name}`);
+  const label = `${pageLabelFor(slug)} · round ${round.round} · ${base}`;
+  // url, slug and label are the panel's existing contract and stay exactly as they were, whatever
+  // the item carries. The rest of the item rides alongside so the band can add a finished card
+  // without going back to the server for it.
+  emit('wireframe', Object.assign({}, item, { url, slug, label }));
+
   return {
-    content: `Rendered. The visitor can open it at ${url} and the panel is already showing it. Tell them what you changed and why, and name anything you had to invent.`,
-    summary: `Rendered round-${round}/${name}.`,
+    content: `Rendered. It is at ${url}, the panel is already showing it, and it is now in the dashboard's designs band for everyone who opens it. Tell the visitor what you changed and why, and name anything you had to invent.`,
+    summary: `Rendered ${round.roundDir}/${name}.`,
   };
 }
 
-// ── Path guard for everything written into, or served out of, a session ────────────────────────
-// Same shape as map.js's resolveWireframeHtml guard, and for the same reason: the prefix test uses
-// root + separator, never the bare root, because a bare prefix also accepts a SIBLING whose name
-// merely starts with it.
-function withinSession(sess, abs) {
-  const root = path.resolve(sess.dir);
-  const p = path.resolve(abs);
-  return p === root || p.startsWith(root + path.sep);
-}
-
-/**
- * GET /session/:sid/wireframes/… serves a visitor their own generated HTML.
- * Returns true when it handled the request, false when the URL was not ours.
- */
-function serveSessionAsset(req, res, url) {
-  const m = /^\/session\/([^/]+)\/(.+)$/.exec(url);
-  if (!m) return false;
-  const sid = m[1];
-  const send = (code, body) => { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); };
-  // Shape-check the id before it is ever joined onto a path. A session id is server-generated, so
-  // anything that is not a UUID did not come from us.
-  if (!SID_RE.test(sid)) return send(404, { ok: false, error: 'not found' }), true;
-  let rel;
-  try { rel = decodeURIComponent(m[2]); } catch { return send(400, { ok: false, error: 'bad path' }), true; }
-  if (!/^wireframes\//.test(rel) || !/\.html?$/i.test(rel)) return send(404, { ok: false, error: 'not found' }), true;
-
-  const root = sessionDir(sid);
-  const file = path.normalize(path.join(root, rel));
-  if (file !== root && !file.startsWith(root + path.sep)) return send(403, { ok: false, error: 'forbidden' }), true;
-  fs.readFile(file, (err, buf) => {
-    if (err) return send(404, { ok: false, error: 'this wireframe has expired or was never here' });
-    // Generated from a captured third-party page and never indexable, same posture as hosted mode
-    // takes for the library itself.
-    res.writeHead(200, { 'content-type': 'text/html', 'cache-control': 'no-store', 'x-robots-tag': 'noindex, nofollow' });
-    res.end(buf);
-  });
+/** GET /api/designs — every design in the shared tree. Returns true when it handled the request. */
+function serveDesigns(req, res, url) {
+  if (url !== '/api/designs') return false;
+  let wireframes = [];
+  // A designs directory that does not exist yet is an empty band, not an error: it is what a
+  // workspace looks like before anybody has drawn anything.
+  try { wireframes = scanDesigns(); } catch (e) { console.log(`⚠ designs: ${e.message.split('\n')[0]}`); }
+  // no-store because this is the one payload on the dashboard that changes while the page is open:
+  // a design rendered thirty seconds ago has to be in the next fetch, not in a heuristically cached
+  // copy of the last one.
+  res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+  res.end(JSON.stringify({ ok: true, wireframes }));
   return true;
 }
 
@@ -824,7 +1139,7 @@ function runTool(sess, name, input, emit) {
     case 'find_in_page': return toolFindInPage(args);
     case 'start_wireframe': return toolStartWireframe(sess, args);
     case 'edit_wireframe': return toolEditWireframe(sess, args);
-    case 'render_wireframe': return toolRenderWireframe(sess, emit);
+    case 'render_wireframe': return toolRenderWireframe(sess, args, emit);
     default: return { error: `There is no tool called "${name}".` };
   }
 }
@@ -988,6 +1303,10 @@ async function runAgent(sess, message, context, stream) {
   const tab = String(context.tab || '').slice(0, 40);
   const slug = String(context.slug || '').slice(0, 120);
   const here = [tab && `dashboard tab: ${tab}`, slug && pageEntry(slug) && `looking at page: ${slug}`].filter(Boolean).join(', ');
+  // The visitor's own words, without the context prefix, held for the length of this turn. Any
+  // design started during it records this as its intent: what the work was for is a fact about the
+  // moment it was asked for, and nothing later in the tree can recover it.
+  sess.ask = message;
   sess.messages.push({ role: 'user', content: here ? `[${here}]\n\n${message}` : message });
   trimHistory(sess.messages);
 
@@ -1048,9 +1367,13 @@ module.exports = {
   MODEL,
   capabilities,
   handleChat,
-  serveSessionAsset,
+  serveDesigns,
+  // The one directory this file writes to, exported so map.js serves and scans exactly the tree
+  // that gets written. Two constants resolving "the designs folder" separately is how a design
+  // ends up written somewhere the /wireframes/ route cannot reach.
+  DESIGNS_DIR,
   // Exported for tests and for anyone poking at the pieces from node -e. Not used by map.js.
   // runTool + newSession are here so the whole tool surface can be exercised without an API key:
   // the agent loop needs one, the tools do not, and the tools are where the library invariant lives.
-  _internals: { selectorFor, loadSnapshot, lofiBlocks, sweepSessions, kebab, fence, runTool, newSession, sessionDir, TOOLS, systemPrompt },
+  _internals: { selectorFor, loadSnapshot, lofiBlocks, sweepSessions, kebab, fence, runTool, newSession, scanDesigns, designsRootFault, withinRoot, TOOLS, systemPrompt },
 };

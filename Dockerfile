@@ -34,13 +34,14 @@ RUN npm install --prefix tools --no-save --no-audit --no-fund --omit=optional \
 # mounted: the demo has to open instantly and must not depend on a volume or a network fetch.
 COPY design-context/ ./design-context/
 COPY AGENTS.md CLAUDE.md README.md LICENSE ./
+COPY docker-entrypoint.sh ./
 
-# Run as the unprivileged user the base image already provides. The process only ever reads.
-USER node
+# NOT `USER node`. The entrypoint starts as root only long enough to hand the designs volume to
+# the node user, then execs the server as node. See docker-entrypoint.sh for why.
 
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=4s --start-period=10s --retries=3 \
   CMD node -e "require('http').get('http://127.0.0.1:'+(process.env.PORT||8080)+'/api/ping',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
 
-CMD ["node", "tools/map.js"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]

@@ -4275,6 +4275,30 @@
       "link": {
         "tab": "home"
       }
+    },
+    {
+      "at": "2026-08-28T07:25:41.021Z",
+      "dateOnly": false,
+      "seq": 6,
+      "actor": "your AI",
+      "kind": "wireframe",
+      "title": "Wireframes — Pricing, round 1 · 1 approach",
+      "detail": "wireframes/pricing/round-1 · library untouched",
+      "link": {
+        "page": "pricing"
+      }
+    },
+    {
+      "at": "2026-08-28T07:36:03.908Z",
+      "dateOnly": false,
+      "seq": 6,
+      "actor": "your AI",
+      "kind": "wireframe",
+      "title": "Wireframes — Online Payment Gateway in India for Businesses | Razorpay, round 1 · 1 approach",
+      "detail": "wireframes/payment-gateway/round-1 · library untouched",
+      "link": {
+        "page": "payment-gateway"
+      }
     }
   ],
   "rootSlug": "home",

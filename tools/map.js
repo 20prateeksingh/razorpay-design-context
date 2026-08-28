@@ -34,13 +34,16 @@
  * Your designs — the wireframes band (F1):
  *   GET  /wireframes/…                    → serves the SIBLING wireframes/ tree (previews + the
  *                                           wireframe HTML itself), guarded the same way as the library
+ *   GET  /api/designs                     → {ok, wireframes:[…]} — the same tree read live, for a band
+ *                                           that has to show work made since the last build
  *   POST /api/wireframe-shot {file}       → renders a missing preview with shot.js (serialized, one
  *                                           Chromium at a time), then rebuilds so a reload keeps it
  *
  * Chat (hosted chat panel), implemented entirely in chat.js; this file only routes:
  *   GET  /api/chat/capabilities          → {ok, enabled, reason, model}; enabled:false with no API key
  *   POST /api/chat                       → SSE: token · tool · wireframe · done · error
- *   GET  /session/:sid/wireframes/…      → a visitor's own generated wireframe HTML, path-guarded
+ *                                           wireframes it builds land in the SAME wireframes/ tree as
+ *                                           a designer's, and are served by the two routes above
  *
  * Copy for Figma (figma-exit-copy-paste PRD, F3):
  *   POST /api/figma-copy {slug, state?}   → records the exit in figma-copies.json (additive) +
@@ -109,7 +112,12 @@ const PRESETS = {
 // the band's srcs are written `../wireframes/…` relative to the library root: over http that resolves
 // here, and over file:// (a dashboard.html opened directly) it resolves to the real folder. One
 // string, both modes.
-const WF = path.join(KIT, 'wireframes');
+//
+// Taken from chat.js rather than rebuilt here, because the chat panel WRITES into this tree and the
+// two must be the same directory: chat.js resolves it once (DCK_DESIGNS_DIR, defaulting to this
+// same <KIT>/wireframes), so pointing the designs folder at a mounted volume moves the writes and
+// this route together instead of leaving designs somewhere nothing serves.
+const WF = chat.DESIGNS_DIR;
 
 // ── Is the baked dashboard behind the design work? ─────────────────────────────────────────────────
 // dashboard.html carries the "Your designs" band as DATA, baked by build-index's scanWireframes();
@@ -459,11 +467,11 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET') {
     if (url === '/api/ping') return json(res, 200, { ok: true });
     if (url === '/api/chat/capabilities') return json(res, 200, chat.capabilities());
-    // A visitor's own generated wireframes, served out of their session scratch dir under the OS
-    // temp dir. Routed HERE rather than left to the static handler below, which is rooted at the
-    // library and would only ever 404 it. chat.js applies the same normalize-then-prefix guard the
-    // static handler uses, against the session root.
-    if (url.startsWith('/session/') && chat.serveSessionAsset(req, res, url)) return;
+    // The designs band, read live off the tree. dashboard.html carries a baked copy of this list
+    // (build-index's scanWireframes) which is only as fresh as the last build, and a wireframe the
+    // chat panel rendered a minute ago has to appear without one. The files themselves are served by
+    // the static /wireframes/ branch below; this is the index of them.
+    if (chat.serveDesigns(req, res, url)) return;
     if (url === '/api/status') return json(res, 200, {
       ok: true, firstRun: isFirstRun(), product: readProduct(), lastAttempt: readLastAttempt(),
       // Absolute path of THIS workspace root — served live only, never baked into dashboard.html,
@@ -505,11 +513,15 @@ const server = http.createServer((req, res) => {
   // ── POST api ─────────────────────────────────────────────────────────────────
   // /api/chat is the ONE POST hosted mode allows, and it is worth being explicit about why the
   // blanket refusal below does not apply. The three things that refusal protects are the library,
-  // the host's machine and shared state. Chat touches none of them: every write it makes goes into
-  // an ephemeral per-visitor dir under the OS temp dir, it spawns no browser, and it never opens a
-  // file under design-context/ for anything but reading. It is also the only endpoint here that
-  // costs the host money, which is why chat.js rate limits it rather than leaning on this gate.
-  // Routed before the refusal because that branch answers 403 before it ever reads a body.
+  // the host's machine and shared state. Chat spawns no browser, and it never opens a file under
+  // design-context/ for anything but reading. It does write, and it writes to shared state: a
+  // wireframe it renders lands in wireframes/ and stays there for everybody, which is the point of
+  // the feature rather than an accident of it. That hole is drawn as narrowly as it can be — every
+  // write chat.js makes is re-checked against DESIGNS_DIR after normalisation, and chat turns itself
+  // off at boot if that directory overlaps the library (chat.js: designsRootFault). It is also the
+  // only endpoint here that costs the host money, which is why chat.js rate limits it rather than
+  // leaning on this gate. Routed before the refusal because that branch answers 403 before it ever
+  // reads a body.
   if (req.method === 'POST' && url === '/api/chat') return chat.handleChat(req, res);
 
   if (req.method === 'POST' && url.startsWith('/api/')) {
