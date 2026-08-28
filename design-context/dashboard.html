@@ -644,6 +644,90 @@
   html[data-hosted="1"] .stt.guided,
   html[data-hosted="1"] #pg-guided { display: none !important; }
 
+  /* ── hosted chat drawer (2026-08-28) ───────────────────────────────────────────────────────────
+     Every prompt in this file is written for an AI sitting in the workspace folder, so on a hosted
+     copy a copied prompt is a dead end: the visitor has neither the folder nor an AI pointed at it.
+     The drawer is what those CTAs become instead.
+
+     It is deliberately NOT modal: no scrim, no focus trap, nothing inert. The point is that a
+     visitor can click a page card, read its doc, and still have the conversation open beside it, so
+     the rest of the dashboard has to keep taking clicks while this is on screen.
+
+     It takes the Working ledger's own column and slides over it (340px, the rail's width) because
+     that column is already the "what to do next" column and a conversation is the same kind of
+     thing. Below --stack-bp the rail wraps under the content and there is no column left to match,
+     so the drawer just takes a comfortable width instead.
+
+     Surface: the ledger's own step-down, so a message card and a ledger card are the same object
+     rather than two dialects. --panel is deliberately NOT re-declared here the way .rail does it:
+     a custom property that reads another one declared on the SAME element resolves against the new
+     value, so re-declaring both would collapse --panel-2 onto --bg. Two tokens, one step, no chain. */
+  html:not([data-hosted="1"]) #chatdrawer { display:none; }
+  #chatdrawer { position:fixed; top:calc(52px + var(--fb-h)); right:0; bottom:0; width:340px; z-index:19;
+                display:flex; flex-direction:column; background:var(--rail); border-left:1px solid var(--line);
+                box-shadow:var(--elev); transform:translateX(100%); visibility:hidden;
+                transition:transform .22s ease-out, visibility 0s linear .22s;
+                --panel-2:var(--panel); --card:var(--bg);
+                --link:color-mix(in srgb, var(--accent-strong) 85%, var(--txt)); }
+  /* visibility flips instantly on the way IN (this rule declares no delay for it) and 220ms late on
+     the way OUT, so the panel is never focusable while it is still off-screen. */
+  #chatdrawer.open { transform:none; visibility:visible; transition:transform .22s ease-out; }
+  @media (max-width:1080px){ /* = --stack-bp */ #chatdrawer { width:min(100vw,400px); } }
+  #chatdrawer .chathd { display:flex; align-items:flex-start; gap:10px; padding:16px 18px 8px; }
+  #chatdrawer .chathd .t { flex:1; min-width:0; }
+  #chatdrawer .chathd b { display:block; font-size:13px; font-weight:650; color:var(--txt); }
+  #chatdrawer .chatabout { display:block; font-size:11px; color:var(--dim); margin-top:2px; }
+  #chatdrawer .chatabout:empty { display:none; }
+  #chatdrawer .chatx { flex:none; background:none; border:0; color:var(--dim); font-size:18px; line-height:1;
+                       padding:2px 6px; border-radius:6px; }
+  #chatdrawer .chatx:hover { background:color-mix(in srgb, var(--txt) 7%, transparent); color:var(--txt); }
+  #chat-lead { padding:0 18px 12px; font-size:11.5px; color:var(--dim); line-height:1.5; }
+  #chat-lead:empty { display:none; }
+  #chat-log { flex:1; overflow-y:auto; padding:0 18px 12px; }
+  #chat-log .cempty { font-size:11.5px; color:var(--dim); line-height:1.6; border:1px dashed var(--line);
+                      border-radius:10px; padding:12px 14px; }
+  /* the ledger card, verbatim (.ent): 1px --line, 10px radius, --card ground, 12/14 padding */
+  .cmsg { border:1px solid var(--line); border-radius:10px; padding:11px 14px; margin-bottom:10px;
+          background:var(--card); font-size:12px; line-height:1.6; }
+  .cmsg .who { display:block; font-size:9.5px; font-family:var(--mono); color:var(--dim);
+               text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px; }
+  .cmsg .cbody { display:block; white-space:pre-wrap; word-break:break-word; }
+  /* `c-` prefixed, not bare `.you`/`.ai`/`.err`: this stylesheet already owns `.ai` (the provenance
+     chip, mono) and `.err` (the wizard's error line). A bubble class named for the record kind picked
+     both up. The first build rendered every reply in monospace, caught on screen. */
+  .cmsg.c-you { background:color-mix(in srgb, var(--accent) 10%, var(--card));
+                border-color:color-mix(in srgb, var(--accent) 30%, var(--line)); }
+  .cmsg.c-err { border-color:color-mix(in srgb, var(--bad) 40%, var(--line)); color:var(--bad); }
+  /* tool lines are status, not speech: dim, mono, no card. They exist so a visitor watching a long
+     answer can see WHICH page it went and read, rather than a stalled cursor. */
+  .ctool { display:flex; gap:6px; font-size:10.5px; font-family:var(--mono); color:var(--dim);
+           margin:0 0 9px 2px; line-height:1.5; }
+  .ctool::before { content:"·"; flex:none; }
+  .cwf { border:1px solid var(--line); border-radius:10px; background:var(--card); margin-bottom:10px; overflow:hidden; }
+  .cwf .wfl { display:flex; gap:8px; align-items:baseline; padding:9px 11px 7px; font-size:11px; color:var(--dim); }
+  .cwf .wfl b { color:var(--txt); font-size:11.5px; font-weight:600; }
+  .cwf .wfl a { margin-left:auto; flex:none; font-size:10.5px; }
+  /* A wireframe is an artifact, not chrome: the same rule the screenshots live by at the top of
+     this stylesheet. It gets a white ground so a lo-fi page renders as the page it is. */
+  .cwf iframe { display:block; width:100%; height:230px; border:0; border-top:1px solid var(--line); background:#fff; }
+  #chat-notice { padding:0 18px 16px; }
+  #chat-notice .nblock { border:1px solid var(--line); border-radius:10px; background:var(--card);
+                         padding:12px 14px; font-size:12px; line-height:1.6; color:var(--dim); }
+  #chat-notice .nblock b { color:var(--txt); font-weight:650; }
+  #chat-notice .nblock p { margin:8px 0 0; }
+  #chat-notice .mono-cmd { font-size:11px; margin:10px 0 0; white-space:pre-wrap; word-break:break-word; }
+  #chat-notice .chiprow { margin-top:12px; }
+  #chat-notice .pchip { margin-bottom:0; }
+  #chat-form { border-top:1px solid var(--line); padding:12px 18px 16px; }
+  #chat-input { width:100%; resize:none; background:var(--panel-2); border:1px solid var(--line); border-radius:8px;
+                color:var(--txt); font:inherit; font-size:12.5px; line-height:1.5; padding:8px 10px; }
+  #chat-input:disabled { opacity:.55; }
+  #chat-form .crow { display:flex; align-items:center; gap:10px; margin-top:9px; }
+  #chat-form .chint { flex:1; min-width:0; font-size:10.5px; color:var(--dim); line-height:1.4; }
+  /* the one screen-reader-only helper in this file: the composer's label is not drawn (the drawer's
+     own heading already says what the field is) but it still has to exist for a real <label for>. */
+  .vh { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+
   /* F1 capture menu — anchored under "+ Capture again"; fixed so it never grows the header */
   #recapmenu { position:fixed; z-index:60; min-width:288px; max-width:min(92vw,340px); background:var(--panel-2);
                border:1px solid var(--line); border-radius:12px; box-shadow:var(--elev); padding:6px; display:none; }
@@ -1145,6 +1229,28 @@
 <section class="pane scrollpane" id="pane-page"></section>
 <section class="pane" id="pane-onboard"></section>
 
+<!-- Hosted chat drawer. Lives OUTSIDE every .pane on purpose: tab switching only toggles .active on
+     the panes, so a drawer parked out here survives Home → Map → Use it with its transcript, its
+     scroll position and its open/closed state untouched, without anything having to remember it.
+     role="dialog" without aria-modal: the dashboard behind it stays live and clickable (see the
+     stylesheet's note), and claiming modality to a screen reader while the page is still usable
+     would be a lie. Empty until mountChat() runs, which only happens on a hosted copy. -->
+<aside id="chatdrawer" role="dialog" aria-labelledby="chat-title" tabindex="-1">
+  <header class="chathd">
+    <div class="t"><b id="chat-title">Ask this library</b><span class="chatabout" id="chat-about"></span></div>
+    <button type="button" class="chatx" id="chat-close" aria-label="close the chat">×</button>
+  </header>
+  <div id="chat-lead"></div>
+  <div id="chat-log" role="log" aria-live="polite" aria-label="conversation"></div>
+  <div id="chat-notice" hidden></div>
+  <form id="chat-form" hidden>
+    <label class="vh" for="chat-input">Your message to the chat</label>
+    <textarea id="chat-input" rows="2" placeholder="Ask about this product…"></textarea>
+    <div class="crow"><span class="chint" id="chat-hint">Enter sends · Shift+Enter for a new line</span>
+      <button type="submit" class="gobtn" id="chat-send">Send</button></div>
+  </form>
+</aside>
+
 <div id="peek" role="tooltip" aria-hidden="true"></div>
 <div id="toast" role="status"></div>
 
@@ -1307,7 +1413,12 @@ const PROMPTS = {
     + "- Don't run anything yet — just explain.",
 };
 const COPY_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5.5" y="5.5" width="8.5" height="8.5" rx="1.5"/><path d="M3.4 10.5H3A1.5 1.5 0 0 1 1.5 9V3A1.5 1.5 0 0 1 3 1.5h6A1.5 1.5 0 0 1 10.5 3v.4"/></svg>';
-function pchip(label, text, ghost){ return `<button type="button" class="pchip${ghost?' ghost':''}" data-prompt="${esc(text)}">${COPY_SVG}${esc(label)}</button>`; }
+// `chat` is the OPTIONAL fourth argument, and it is read on a hosted copy only: `<kind>` or
+// `<kind>|<slug>`, resolved against CHAT_INTENTS below. It is written at the call site rather than
+// sniffed from the prompt text because the same prompt is offered under several labels ("Copy the
+// prompt", "Copy the describe prompt", "Describe the N new pages") and only the author of the call
+// site knows which act the button stands for. A chip without it keeps copying, hosted or not.
+function pchip(label, text, ghost, chat){ return `<button type="button" class="pchip${ghost?' ghost':''}" data-prompt="${esc(text)}"${chat?` data-chat="${esc(chat)}"`:''}>${COPY_SVG}${esc(label)}</button>`; }
 // (prompt-readability) The prompts are MULTI-LINE now, and the old blocked-copy fallback was
 // `prompt('Copy this prompt:', text)`. A prompt() dialog renders a SINGLE-LINE text field, whose value
 // setter runs the HTML value-sanitization algorithm and strips every CR/LF — measured in Chromium:
@@ -1384,9 +1495,352 @@ function copyPrompt(text, withLocation){ if(!text) return;
     .then(()=>toast('Copied — paste it into your AI chat.'))
     .catch(()=>copyFallback(text)); }
 // one delegated handler for every chip, anywhere (works during onboarding completion too)
-document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-prompt]'); if (b) copyPrompt(b.getAttribute('data-prompt')); });
+// Hosted (2026-08-28): a chip carrying `data-chat` opens the drawer instead of copying, either as a
+// conversation the visitor can actually have, or as the honest "this one runs on your own machine".
+// LOCAL MODE IS UNTOUCHED: chatIntentOf() returns null unless data-hosted="1" is on <html>, so on a
+// designer's own copy the only thing that has ever happened here still happens.
+document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-prompt]');
+  if (!b) return;
+  const it = chatIntentOf(b);
+  if (it){ openChat(it.key, { slug:it.slug, prompt:b.getAttribute('data-prompt'), opener:b }); return; }
+  copyPrompt(b.getAttribute('data-prompt')); });
 // delegated in-dashboard navigation: any [data-goto] sets the hash → route() (below) reacts
 document.addEventListener('click', e=>{ const g = e.target.closest && e.target.closest('[data-goto]'); if (g && !g.hasAttribute('data-prompt')){ e.preventDefault(); if (window.closePanel) window.closePanel(); location.hash = g.getAttribute('data-goto'); } });
+
+// ═════════════════════════ HOSTED CHAT ═══════════════════════════════════════
+// "Prompts are the UI" was written for a designer with the workspace on their own disk. A hosted
+// visitor has neither the folder nor an AI pointed at it, so every one of those chips hands them a
+// prompt full of paths that resolve to nothing. This section is what the chips become instead, and
+// it splits the twelve CTAs by what is actually true of each on a public URL:
+//
+//   · the ones the library alone can answer (questions, wireframes, what's missing, an audit)
+//     become a conversation with an AI that has this same library behind it;
+//   · the ones that drive a real browser or write to a real folder (capture, guided capture,
+//     re-capture, describe, bootstrap) cannot work here at any price, so they say so, hand over the
+//     command, and point at the repo. Opening a chat that could not deliver would be the worse lie.
+//
+// Nothing in here runs unless <html data-hosted="1"> is set (boot()). Local mode never sees it.
+const CHAT_REPO = 'https://github.com/20prateeksingh/design-context-for-ai';
+const CHAT = { present:false, enabled:false, reason:'', model:'',
+               open:false, intent:'ask', slug:null, prompt:'', opener:null,
+               sessionId:null, streaming:false, seed:'', log:[] };
+
+// `seed` prefills the composer; NOTHING here is auto-sent. Three reasons, all real: half these
+// prompts carry a ‹placeholder› only the visitor can fill, the message is sent in their name, and
+// the server rate-limits. Spending a turn on a message they never read would be rude on all three.
+const CHAT_INTENTS = {
+  ask:       { chat:true, title:'Ask about this product',
+               lead:'Answers come from the library captured on this server: the pages, their screen docs, and the observed tokens. If something is not in there, it should say so rather than guess.',
+               seed:(label)=> label ? 'I have a question about the ' + label + ' page: ' : 'I have a question about this product: ' },
+  wireframe: { chat:true, title:'Wireframe a change',
+               lead:"It works on a copy of the captured page, keeping the product's real shell, exactly as the kit does locally. The captured library itself is never edited.",
+               seed:(label)=> 'I want to explore a change on the ' + (label || 'first') + ' page: ' },
+  designNew: { chat:true, title:'Design something new',
+               lead:"It borrows the components and grammar of the pages that were captured, rather than inventing house style. Where the library is too thin to know, it should say so.",
+               seed:()=> 'I want to design something new for this product: ' },
+  missing:   { chat:true, title:"What's missing",
+               lead:'It reads the frontier, meaning pages found during capture but never downloaded, and the states each page does and does not have.',
+               seed:()=> "What's missing from this library, and which locked pages or missing states are worth having first?" },
+  audit:     { chat:true, title:'Audit the visual language',
+               lead:'The values it reads were observed across the captured pages. They are evidence of how the product is styled today, not its authored tokens.',
+               seed:()=> "Audit this product's visual language: where is it consistent, where is it drifting, and what would you consolidate first?" },
+  bundle:    { chat:true, title:'Orient me in this product',
+               lead:'The context bundle exists to hand this library to an AI that cannot read files. The one here already has it, so the bundle is a copy away and the question is the useful part.',
+               seed:()=> 'Give me an orientation to this product: the pages, the repeating layouts, and the observed design tokens.' },
+
+  describe:  { chat:false, title:'Describing pages runs on your own machine',
+               why:'Writing a screen doc means editing files inside the library folder and then rebuilding the index. Both are writes to a workspace on your own disk, and a hosted copy has neither the folder nor permission to touch it.',
+               cmd:'cd "<your workspace>" && claude\n# then, once it has written the docs:\nnode tools/build-index.js' },
+  addState:  { chat:false, title:'Adding a state runs a browser on your own machine',
+               why:'A state is captured by opening that URL in a real browser signed in as you. The browser has to be yours: this server cannot open one for you, and would not be carrying your session if it could.',
+               cmd:'node tools/capture.js --state <slug>:<state-name> --url "<the url>"' },
+  guided:    { chat:false, title:'Guided capture runs a browser on your own machine',
+               why:'Guided capture opens a browser window that you drive, so it can snapshot the states you can only reach by clicking. There is no version of that which happens on a server you are visiting.',
+               cmd:'node tools/capture.js --guided --url "<where to start>"' },
+  recapture: { chat:false, title:'Re-capture runs on your own machine',
+               why:'Checking for changes means crawling the live product again and writing fresh snapshots into the library. This copy is one fixed snapshot: no crawler, and nothing here is writable.',
+               cmd:'node tools/capture.js --url "<your product>"\nnode tools/build-index.js' },
+  bootstrap: { chat:false, title:'That prompt is for an AI inside your workspace',
+               why:'It tells a coding tool to read AGENTS.md and the library from the folder it is running in. Pasted into a chat with no file access there is nothing for it to open.',
+               cmd:'cd "<your workspace>" && claude' },
+};
+
+// Hosted-only, and it says so in one place so no call site has to remember. A chip whose data-chat
+// names an intent this build does not have falls through to copying, which is the safe direction.
+function chatIntentOf(btn){
+  if (document.documentElement.getAttribute('data-hosted') !== '1') return null;
+  const raw = btn.getAttribute && btn.getAttribute('data-chat'); if (!raw) return null;
+  const bar = raw.indexOf('|'), key = bar < 0 ? raw : raw.slice(0, bar);
+  if (!CHAT_INTENTS[key]) return null;
+  return { key, slug: bar < 0 ? '' : raw.slice(bar + 1) };
+}
+
+// Ask the server what it can do BEFORE any CTA can be clicked, so the drawer never has to open in a
+// "checking…" state. Three outcomes, and the middle one is the whole reason this is a probe and not
+// an assumption: the endpoint answers and says it is off, the endpoint answers and says it is on, or
+// the endpoint is not there at all (a build serving only the library: a 404, or no server behind the
+// path). The last two both leave CHAT.present false and the drawer explains itself calmly.
+async function probeChat(){
+  try {
+    const r = await fetch('/api/chat/capabilities');
+    if (!r.ok) return;
+    const j = await r.json();
+    if (!j || j.ok === false) return;
+    CHAT.present = true; CHAT.enabled = !!j.enabled;
+    CHAT.reason = j.reason || ''; CHAT.model = j.model || '';
+  } catch(_){}   // a network or parse failure reads the same as absent, because for the visitor it is
+}
+
+const chatEl = id => document.getElementById(id);
+function chatPageLabel(slug){ if(!slug || !DATA) return '';
+  const n = (DATA.nodes||[]).find(x=>x.id===slug); return n ? (n.displayLabel || n.label || n.id) : slug; }
+// The tab is part of the context the server gets, and the pane is the only honest source for it: the
+// hash lags behind a page-doc navigation and is empty on first load.
+function chatTab(){ const p = document.querySelector('.pane.active'); return p ? p.id.replace(/^pane-/, '') : 'home'; }
+// A url arriving in a stream frame is DATA, not markup this file wrote. Resolving it and then
+// insisting on http(s) is what keeps `javascript:` and `data:` out of an href and an iframe src.
+function chatSafeUrl(u){ if (typeof u !== 'string' || !u) return null;
+  try { const a = new URL(u, location.href); return (a.protocol === 'http:' || a.protocol === 'https:') ? a.href : null; }
+  catch(_){ return null; } }
+
+// ── transcript ──────────────────────────────────────────────────────────────────────────────────
+// The array is the source of truth and the DOM is derived from it, which is what makes the session
+// restore below a two-liner instead of a serialized-HTML problem.
+function chatRecHtml(rec, i){
+  if (rec.t === 'tool') return `<div class="ctool" data-ci="${i}">${esc(rec.text)}</div>`;
+  if (rec.t === 'wf') return `<div class="cwf" data-ci="${i}"><div class="wfl"><b>${esc(rec.label)}</b>${rec.slug?`<span>${esc(rec.slug)}</span>`:''}<a href="${esc(rec.url)}" target="_blank" rel="noopener">open full ↗</a></div>
+      <iframe src="${esc(rec.url)}" sandbox="" title="Wireframe preview: ${esc(rec.label)}" loading="lazy"></iframe></div>`;
+  const who = rec.t === 'you' ? 'you' : rec.t === 'err' ? 'the kit' : 'the chat';
+  return `<div class="cmsg c-${esc(rec.t)}" data-ci="${i}"><span class="who">${who}</span><span class="cbody">${esc(rec.text)}</span></div>`;
+}
+function chatRenderLog(){
+  const el = chatEl('chat-log'); if(!el) return;
+  el.innerHTML = CHAT.log.length ? CHAT.log.map(chatRecHtml).join('')
+    : '<div class="cempty">Nothing asked yet. What it knows is exactly what is in this library: the captured pages, their screen docs, and the values observed on them.</div>';
+  el.scrollTop = el.scrollHeight;
+}
+// Stick to the bottom only if we were already there. A visitor who scrolled up to re-read an earlier
+// answer is reading it; yanking them back down mid-stream is the bug this guard exists for.
+function chatAppend(rec){
+  const el = chatEl('chat-log'); const stick = !el || (el.scrollHeight - el.scrollTop - el.clientHeight) < 80;
+  CHAT.log.push(rec); const i = CHAT.log.length - 1;
+  if (el){ if (CHAT.log.length === 1) el.innerHTML = ''; el.insertAdjacentHTML('beforeend', chatRecHtml(rec, i));
+           if (stick) el.scrollTop = el.scrollHeight; }
+  chatSave(); return i;
+}
+function chatGrow(i, text){
+  CHAT.log[i].text += text;
+  const el = chatEl('chat-log'); if(!el) return;
+  const stick = (el.scrollHeight - el.scrollTop - el.clientHeight) < 80;
+  const body = el.querySelector('[data-ci="' + i + '"] .cbody');
+  if (body) body.textContent = CHAT.log[i].text;
+  if (stick) el.scrollTop = el.scrollHeight;
+}
+
+// sessionStorage, not localStorage: this is one visit's conversation, not a thing to find again next
+// week on a shared demo URL. It survives a reload and a deep link within the session, which is what
+// makes the drawer feel like it stayed put; a new tab starts clean.
+const CHAT_STORE = 'dck.chat.v1';
+function chatSave(){ try { sessionStorage.setItem(CHAT_STORE, JSON.stringify({
+  open:CHAT.open, intent:CHAT.intent, slug:CHAT.slug, prompt:CHAT.prompt, sessionId:CHAT.sessionId, log:CHAT.log })); } catch(_){} }
+function chatRestore(){
+  let s = null; try { s = JSON.parse(sessionStorage.getItem(CHAT_STORE) || 'null'); } catch(_){}
+  if (!s) return;
+  CHAT.sessionId = s.sessionId || null;
+  CHAT.log = Array.isArray(s.log) ? s.log : [];
+  CHAT.slug = s.slug || null; CHAT.prompt = s.prompt || '';
+  CHAT.intent = CHAT_INTENTS[s.intent] ? s.intent : 'ask';
+  // focus:false, because nobody clicked anything: the page merely reloaded. Taking the caret away from
+  // whatever the visitor reaches for next would be a reload stealing their hands.
+  if (s.open) openChat(CHAT.intent, { slug:CHAT.slug, prompt:CHAT.prompt, focus:false });
+}
+
+// ── the drawer ──────────────────────────────────────────────────────────────────────────────────
+function chatPaint(){
+  const it = CHAT_INTENTS[CHAT.intent]; if (!it) return;
+  const label = it.chat ? chatPageLabel(CHAT.slug) : '';
+  const lead = chatEl('chat-lead'), notice = chatEl('chat-notice'), form = chatEl('chat-form'), log = chatEl('chat-log');
+  chatEl('chat-title').textContent = it.title;
+  chatEl('chat-about').textContent = label ? 'about ' + label : '';
+  // The prompt the chip was carrying, offered as an ordinary [data-prompt] chip so it goes back
+  // through copyPrompt(): the same funnel, the same toast, the same fallback textarea. (Hosted
+  // withholds workspacePath, so no workspace line is appended; there is no folder to name.)
+  const copyChip = CHAT.prompt
+    ? `<div class="chiprow">${pchip('Copy the prompt instead', CHAT.prompt, true)}</div>` : '';
+
+  if (!it.chat){
+    // Local-only: no composer at all. A disabled input under an explanation only invites a visitor to
+    // try typing into it.
+    lead.textContent = ''; log.hidden = true; form.hidden = true; notice.hidden = false;
+    // No repeat of it.title inside the block: the drawer's own heading already carries it, and the
+    // first build said the same sentence twice, forty pixels apart.
+    notice.innerHTML = `<div class="nblock">${esc(it.why)}
+      <div class="mono-cmd">${esc(it.cmd)}</div>
+      <p>Point the kit at your own product and every step above is yours to run: <a href="${esc(CHAT_REPO)}" target="_blank" rel="noopener">the kit is on GitHub</a>.</p>
+      ${copyChip}</div>`;
+    return;
+  }
+  if (!CHAT.present || !CHAT.enabled){
+    lead.textContent = ''; log.hidden = true; form.hidden = true; notice.hidden = false;
+    const why = CHAT.present
+      ? (CHAT.reason || 'The host has turned it off for now.')
+      : 'This copy is serving the captured library only. There is no AI wired up behind it.';
+    notice.innerHTML = `<div class="nblock"><b>The chat is off on this copy</b>
+      <p>${esc(why)}</p>
+      <p>The library itself is all still here: every page, screen doc and observed value is on the pages behind this panel. And the prompt below is the same one the kit hands a designer running it locally, so any AI that can read the folder can still do the work.</p>
+      ${copyChip}</div>`;
+    return;
+  }
+  notice.hidden = true; notice.innerHTML = ''; log.hidden = false; form.hidden = false;
+  lead.textContent = it.lead + (CHAT.model ? ' Model: ' + CHAT.model + '.' : '');
+  chatRenderLog();
+  // Seed only into an empty composer, or over a seed the visitor has not touched. Clobbering a
+  // half-typed question because they clicked a second CTA is the one thing this must not do.
+  const input = chatEl('chat-input');
+  const fresh = it.seed(label);
+  if (!input.value.trim() || input.value === CHAT.seed){ input.value = fresh; CHAT.seed = fresh; }
+}
+
+function openChat(key, opts){
+  const it = CHAT_INTENTS[key]; const d = chatEl('chatdrawer'); if (!it || !d) return;
+  const o = opts || {};
+  CHAT.intent = key; CHAT.prompt = o.prompt || '';
+  if (it.chat) CHAT.slug = o.slug || null;
+  if (o.opener) CHAT.opener = o.opener;
+  CHAT.open = true; d.classList.add('open');
+  chatPaint(); chatSave();
+  if (o.focus === false) return;
+  const input = chatEl('chat-input');
+  if (!chatEl('chat-form').hidden && input){ input.focus(); const n = input.value.length; try { input.setSelectionRange(n, n); } catch(_){} }
+  else d.focus();   // the notice has no field to land in; the dialog itself is read out instead
+}
+function closeChat(){
+  const d = chatEl('chatdrawer'); if (!d) return;
+  CHAT.open = false; d.classList.remove('open'); chatSave();
+  const o = CHAT.opener; CHAT.opener = null;
+  // Focus goes back to the control that opened it, unless the rail has re-rendered it out of the
+  // document since, which is exactly what happens when the visitor clicks a page card mid-conversation.
+  if (o && o.isConnected && typeof o.focus === 'function') o.focus();
+}
+
+// ── the stream ──────────────────────────────────────────────────────────────────────────────────
+// POST, so EventSource is out (it only ever issues a GET) and the SSE framing is parsed here.
+async function chatRead(body, onFrame){
+  const reader = body.getReader(), dec = new TextDecoder();
+  let buf = '';
+  for(;;){
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream:true });
+    // SSE permits CRLF and lone CR as line breaks. Normalising the whole buffer makes the frame split
+    // below one test instead of three. A trailing CR is held back first, because it may be the
+    // first half of a CRLF whose LF has not arrived yet, and rewriting it now would invent a frame
+    // boundary that the server never sent.
+    let hold = '';
+    if (buf.charAt(buf.length - 1) === '\r'){ hold = '\r'; buf = buf.slice(0, -1); }
+    buf = buf.replace(/\r\n?/g, '\n');
+    let i;
+    while ((i = buf.indexOf('\n\n')) >= 0){
+      const frame = buf.slice(0, i); buf = buf.slice(i + 2);
+      let name = 'message', data = '';
+      for (const line of frame.split('\n')){
+        if (!line || line.charAt(0) === ':') continue;        // ": hb" heartbeats and comments
+        const c = line.indexOf(':');
+        const field = c < 0 ? line : line.slice(0, c);
+        let v = c < 0 ? '' : line.slice(c + 1);
+        if (v.charAt(0) === ' ') v = v.slice(1);              // the one optional space after the colon
+        if (field === 'event') name = v;
+        else if (field === 'data') data = data ? data + '\n' + v : v;
+      }
+      if (!data) continue;
+      let parsed = null; try { parsed = JSON.parse(data); } catch(_){}
+      if (parsed) onFrame(name, parsed);
+    }
+    buf += hold;
+  }
+}
+
+async function chatSend(text){
+  if (CHAT.streaming) return;
+  text = String(text || '').trim(); if (!text) return;
+  const input = chatEl('chat-input'), log = chatEl('chat-log');
+  input.value = ''; CHAT.seed = '';
+  chatAppend({ t:'you', text });
+  CHAT.streaming = true; input.disabled = true;
+  const restore = setBusy(chatEl('chat-send'));
+  // The log is a live region, and a token-by-token stream would be announced a fragment at a time.
+  // aria-busy is the documented way to say "mid-update, hold". It is cleared below, which is the
+  // moment the reply is actually worth hearing.
+  log.setAttribute('aria-busy', 'true');
+  let ai = -1, frames = 0;
+  const onFrame = (name, d) => {
+    frames++;
+    if (name === 'token'){
+      const s = d && d.text; if (!s) return;
+      if (ai < 0) ai = chatAppend({ t:'ai', text:'' });
+      chatGrow(ai, s);
+    } else if (name === 'tool'){
+      // A tool line closes the bubble above it, so text that arrives after the tool ran starts a new
+      // one and the transcript reads in the order things actually happened.
+      chatAppend({ t:'tool', text: (d && (d.summary || d.name)) || 'working…' }); ai = -1;
+    } else if (name === 'wireframe'){
+      const u = chatSafeUrl(d && d.url);
+      if (u) chatAppend({ t:'wf', url:u, slug:(d && d.slug) || '', label:(d && (d.label || d.slug)) || 'wireframe' });
+      ai = -1;
+    } else if (name === 'done'){
+      if (d && d.sessionId) CHAT.sessionId = d.sessionId;   // sent on every later message, so the thread continues
+    } else if (name === 'error'){
+      chatAppend({ t:'err', text:(d && d.message) || 'Something went wrong.' }); ai = -1;
+    }
+  };
+  try {
+    const payload = { message:text, context:{ tab:chatTab() } };
+    if (CHAT.sessionId) payload.sessionId = CHAT.sessionId;
+    if (CHAT.slug) payload.context.slug = CHAT.slug;
+    const res = await fetch('/api/chat', { method:'POST', headers:{ 'content-type':'application/json' }, body:JSON.stringify(payload) });
+    if (res.status === 429){
+      // A rate limit is a deliberate stop, not a hiccup. Retrying on the visitor's behalf is the
+      // exact behaviour the limit exists to prevent, so this only ever repeats what the server said.
+      const j = await res.json().catch(()=>null);
+      chatAppend({ t:'err', text:(j && j.error) || 'That is enough questions for now. The limit resets after a while.' });
+    } else if (!res.ok || !res.body){
+      chatAppend({ t:'err', text:'The chat did not answer (HTTP ' + res.status + ').' });
+    } else {
+      await chatRead(res.body, onFrame);
+      // A stream that opens, sends no frame and closes leaves an empty log and a visitor watching
+      // nothing happen. Seen for real against a server whose model credentials were rejected: it
+      // logged the 401 on its own side and hung up without an `error` frame. Silence is not an
+      // answer, so this says the plain thing rather than letting the drawer look asleep.
+      if (!frames) chatAppend({ t:'err', text:'The chat opened but sent nothing back. That is a fault on the server side, not a rejected question. Try again in a moment.' });
+    }
+  } catch(e){
+    chatAppend({ t:'err', text:'The connection dropped before the answer finished: ' + String((e && e.message) || e) });
+  }
+  CHAT.streaming = false; log.removeAttribute('aria-busy');
+  restore(); input.disabled = false; input.focus(); chatSave();
+}
+
+// Wired once, on a hosted copy only (boot()). Everything above is inert until this runs.
+function mountChat(){
+  const d = chatEl('chatdrawer'); if (!d) return;
+  chatEl('chat-close').onclick = closeChat;
+  const form = chatEl('chat-form'), input = chatEl('chat-input');
+  form.addEventListener('submit', e => { e.preventDefault(); chatSend(input.value); });
+  input.addEventListener('keydown', e => {
+    // Enter sends, Shift+Enter breaks the line. isComposing guards an IME candidate window, where
+    // Enter means "accept this word" and must never be a send.
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); chatSend(input.value); }
+  });
+  d.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    // The rail panel and the capture menu each close on Escape from their own document-level
+    // listener. This one is on the drawer, so it only fires with focus inside the chat, and it stops
+    // the event here: with the chat focused Escape means "close the chat", never "close the page
+    // panel behind it as well".
+    e.stopPropagation(); closeChat();
+  });
+  chatRestore();
+}
 
 // ═════════════════════════ ONBOARDING ════════════════════════════════════════
 // wizard → (login-page capture → login window) → live capture → completion.
@@ -1714,6 +2168,11 @@ function mountAttemptBanner(a){
     document.documentElement.setAttribute('data-hosted', '1');
     const chip = document.getElementById('betachip');
     if (chip) { chip.textContent = 'READ-ONLY'; chip.title = 'A hosted copy of a captured library. Capture runs on your own machine.'; }
+    // Awaited, not fired and forgotten: the answer decides what the drawer says, and the first CTA
+    // can be clicked the instant the dashboard paints. One request, hosted only, so local mode pays
+    // nothing for it. probeChat() never throws: an absent endpoint is a valid answer here.
+    await probeChat();
+    mountChat();
   }
   mountFileBanner();
   if (serverMode && STATUS.lastAttempt) mountAttemptBanner(STATUS.lastAttempt);
@@ -2661,7 +3120,7 @@ function initDashboard(){
       el.innerHTML = `<div class="railpanel">${CLOSE}<h2>Locked — not downloaded yet</h2>
         <div class="route">${esc(n.pattern||'')}</div>
         ${isShape ? shapeOffer : plainOffer}
-        <div class="chiprow" style="margin:10px 0">${pchip("Ask your AI what's worth unlocking", PROMPTS.whatsMissing(), true)}</div>
+        <div class="chiprow" style="margin:10px 0">${pchip("Ask your AI what's worth unlocking", PROMPTS.whatsMissing(), true, 'missing')}</div>
         <h3>${isShape?'Or pick specific pages':'Pick pages to unlock'} ${n.count>urls.length?`(showing ${urls.length} of ${n.count})`:''}</h3>
         ${urls.map(u=>`<label class="urlrow"><input type="checkbox" data-u="${esc(u)}" ${selected.has(u)?'checked':''}>
           <span class="u">${esc(decodeURIComponent(u).replace(/^https?:\/\/[^/]+/,''))}<small>${esc(u.split('/')[2]||'')}</small></span></label>`).join('')}
@@ -2689,7 +3148,7 @@ function initDashboard(){
         <div class="meta">downloaded ${when}${n.standsFor?` · stands for <b>${n.standsFor}</b> pages`:''} · linked from ${n.inboundCount||0} · ${depthTxt}</div>
         <div class="desc">${n.descPending?'<span class="meta">— caption dormant, waiting for your AI</span>':esc(n.desc||'')} ${n.descPending?'':'<span class="ai" title="model-written orientation, not extracted fact">ai</span>'}</div>
         <button class="btn primary" id="pnl-expand" style="width:100%;margin-top:12px">Expand ↗ Open the full page doc</button>
-        <div class="chiprow" style="margin-top:10px">${pchip('Wireframe on this page', PROMPTS.wireframe(n.id))}${figmaBtn(n.id)}${n.descPending ? pchip('Describe this page', PROMPTS.describeLibrary(), true) : pchip('Ask about this page', PROMPTS.askQuestion(), true)}</div>
+        <div class="chiprow" style="margin-top:10px">${pchip('Wireframe on this page', PROMPTS.wireframe(n.id), false, 'wireframe|'+n.id)}${figmaBtn(n.id)}${n.descPending ? pchip('Describe this page', PROMPTS.describeLibrary(), true, 'describe') : pchip('Ask about this page', PROMPTS.askQuestion(), true, 'ask|'+n.id)}</div>
         <div class="links" style="margin-top:8px;font-size:12px"><a href="${esc(n.pageHtml)}" target="_blank">open HTML</a> · <a href="${esc(n.pageMd)}" target="_blank">screen doc</a></div>
         ${n.foldedInto?`<div class="meta" style="margin-top:6px">Folded into <button class="lnk" data-goto="page/${esc(n.foldedInto)}">${esc(dlabel(byId[n.foldedInto]||{id:n.foldedInto}))}</button> — captured here, shown there.</div>`:''}
         ${foldedMembers.length?`<h3>Also stands for</h3><div class="desc">${foldedMembers.map(m=>`<button class="lnk" data-goto="page/${esc(m.id)}">${esc(dlabel(m))}</button>`).join(' · ')}</div>`:''}
@@ -3294,7 +3753,7 @@ function initDashboard(){
     // path that reaches button-only states), beside a copy-prompt chip for the URL-reachable case.
     const statesTop = (!full && top && top.key==='states');
     const action = statesTop
-      ? `<div class="ract"><button type="button" class="gobtn" id="ready-guided">Launch guided capture</button>${pchip('Copy the add-a-state prompt', PROMPTS.addState(), true)}</div>` : '';
+      ? `<div class="ract"><button type="button" class="gobtn" id="ready-guided">Launch guided capture</button>${pchip('Copy the add-a-state prompt', PROMPTS.addState(), true, 'addState')}</div>` : '';
     pop.innerHTML = `<h4>Context readiness — ${R.score}%</h4>
       ${whisper}${action}
       <div class="pnote">A composite of how ready this library is as AI context — not surface coverage. <span class="ai" title="heuristic v1 weighting">heuristic</span></div>
@@ -3330,7 +3789,7 @@ function initDashboard(){
     // top-up action right here too — not just in the next-slot hero.
     let chip='';
     if(ev.kind==='describe'){ const pend=DASH.pendingDescriptions||0;
-      if(pend>0) chip=`<div class="chiprow" style="margin-top:8px">${pchip(`Describe the ${pend} new page${pend===1?'':'s'}`, PROMPTS.describeLibrary())}</div>`; }
+      if(pend>0) chip=`<div class="chiprow" style="margin-top:8px">${pchip(`Describe the ${pend} new page${pend===1?'':'s'}`, PROMPTS.describeLibrary(), false, 'describe')}</div>`; }
     return `<div class="ent${newest?' newest':''}" data-actor="${esc(ev.actor)}"><div class="emeta">${esc(when)} · ${esc(ev.actor)}</div>
       <span class="etitle">${esc(ev.title)}</span>${ev.detail?`<div class="edetail">${esc(ev.detail)}</div>`:''}${dlines}${thumbs}${chip}${link}</div>`;
   }
@@ -3358,7 +3817,7 @@ function initDashboard(){
     if(R && R.score>=100)
       return `<div class="ent hero quiet"><div class="emeta">next · nothing waiting</div>
         <div class="edetail">Your library is complete and current. When your product ships something new, check for changes here — the ledger will tell you what moved.</div>
-        <div class="chiprow">${pchip('Check for changes', PROMPTS.recaptureCheck())}</div></div>`;
+        <div class="chiprow">${pchip('Check for changes', PROMPTS.recaptureCheck(), false, 'recapture')}</div></div>`;
     if(pend>0){
       // Context-aware: first-run (AI has never read the library) vs top-up (it has, but new pages —
       // e.g. from a guided session — are waiting). Same prompt fills only the pending ones either way.
@@ -3367,16 +3826,16 @@ function initDashboard(){
         return `<div class="ent hero"><div class="emeta">next · one move unlocks the rest</div>
           <span class="etitle">Give your AI this toolkit</span>
           <div class="edetail">One prompt, pasted into your AI chat — it reads all ${I.downloaded} pages, fills the captions, and this ledger records the run. A couple of minutes.</div>
-          <div class="chiprow">${pchip('Copy the prompt', PROMPTS.describeLibrary())}</div></div>`;
+          <div class="chiprow">${pchip('Copy the prompt', PROMPTS.describeLibrary(), false, 'describe')}</div></div>`;
       return `<div class="ent hero"><div class="emeta">next · new pages waiting</div>
         <span class="etitle">Let your AI read your ${pend} new page${pend===1?'':'s'}</span>
         <div class="edetail">You've captured ${pend} page${pend===1?'':'s'} since your AI last read the library. One prompt and it describes just the new one${pend===1?'':'s'} — this ledger records the run.</div>
-        <div class="chiprow">${pchip('Copy the describe prompt', PROMPTS.describeLibrary())}</div></div>`;
+        <div class="chiprow">${pchip('Copy the describe prompt', PROMPTS.describeLibrary(), false, 'describe')}</div></div>`;
     }
     return `<div class="ent hero"><div class="emeta">next · your AI knows your product now</div>
       <span class="etitle">Make your first thing</span>
       <div class="edetail">A wireframe on a real page, or a question answered from the library.</div>
-      <div class="chiprow">${pchip('Copy a wireframe prompt', PROMPTS.wireframe(firstSlug()))}${pchip('Ask a question', PROMPTS.askQuestion(), true)}</div></div>`;
+      <div class="chiprow">${pchip('Copy a wireframe prompt', PROMPTS.wireframe(firstSlug()), false, 'wireframe|'+firstSlug())}${pchip('Ask a question', PROMPTS.askQuestion(), true, 'ask')}</div></div>`;
   }
 
   // ═════════ F4 (hygiene-speaks-designer) — the hygiene ledger card ═════════
@@ -3714,7 +4173,7 @@ function initDashboard(){
           <div class="meta">Ask your AI to explore a change on any page above. It works on a <b>copy</b> of that
           page's captured HTML in <code>wireframes/</code>, so the real product's snapshot is never edited —
           and every approach it renders shows up here.</div>
-          <div class="chiprow" style="margin-top:10px">${pchip('Copy the wireframe prompt', PROMPTS.wireframe(firstSlug()), true)}</div>
+          <div class="chiprow" style="margin-top:10px">${pchip('Copy the wireframe prompt', PROMPTS.wireframe(firstSlug()), true, 'wireframe|'+firstSlug())}</div>
         </div></div>`;
     }
     // filter chips by what the work is ON — the same "All (NN)" grammar the atlas uses above
@@ -3759,7 +4218,7 @@ function initDashboard(){
       ${w.intent?`<div class="desc"><b>This round:</b> ${esc(w.intent)}</div>`:''}
       <div class="desc">${cap && cap!==w.intent ? esc(cap) : '<span class="meta">— no per-approach line in notes.md</span>'}</div>
       <button class="btn primary" id="wf-open" style="width:100%;margin-top:12px">Open ↗ this wireframe</button>
-      <div class="chiprow" style="margin-top:10px">${figmaWfBtn(w)}${pchip('Next round on this page', PROMPTS.wireframe(w.page || w.key), true)}</div>
+      <div class="chiprow" style="margin-top:10px">${figmaWfBtn(w)}${pchip('Next round on this page', PROMPTS.wireframe(w.page || w.key), true, 'wireframe|'+(w.page || w.key))}</div>
       <div class="links" style="margin-top:8px;font-size:12px">${w.notes?`<a href="${esc(w.notes)}" target="_blank">round notes</a>`:'<span class="meta">no notes.md in this round</span>'}${w.preview?` · <a href="${esc(w.preview)}" target="_blank">full preview PNG</a>`:''}</div>
       ${w.views && w.views.length?`<h3>Other frames</h3>${w.views.map(v=>`<div class="wfrow"><a class="lnk" href="${esc(v.src)}" target="_blank">${esc(v.label)}</a></div>`).join('')}`:''}
       ${sibs.length>1?`<h3>The rest of round ${esc(w.round)}</h3>${sibs.filter(x=>x.id!==w.id).map(x=>`<div class="wfrow"><button class="lnk" data-wfgo="${esc(x.id)}">${esc(x.name)}</button><span class="wfm">${esc(fmtAgo(x.at))}</span></div>`).join('')}`:''}
@@ -3986,7 +4445,7 @@ function initDashboard(){
       <div class="retbar"><button class="retbtn" id="pg-back">${backLabel}</button>
         <span class="crumb" style="margin:0"><button class="lnk" data-goto="home">Home</button> / ${esc(n.section||'')} / ${esc(dlabel(n))}</span></div>
       <div class="dhd"><h1>${esc(dlabel(n))}</h1><span class="rt">${esc(n.route||'')} · captured ${fmtDate(n.capturedAt)} · current</span>
-        <div class="acts">${pchip('Wireframe on this page',PROMPTS.wireframe(slug))}${figmaBtn(slug)}${pchip('Ask about this page',PROMPTS.askQuestion(),true)}<a class="pchip ghost" href="${esc(n.pageHtml)}" target="_blank">Open real HTML</a></div></div>
+        <div class="acts">${pchip('Wireframe on this page',PROMPTS.wireframe(slug),false,'wireframe|'+slug)}${figmaBtn(slug)}${pchip('Ask about this page',PROMPTS.askQuestion(),true,'ask|'+slug)}<a class="pchip ghost" href="${esc(n.pageHtml)}" target="_blank">Open real HTML</a></div></div>
       <div class="dcols">
         <div class="dleft">
           ${n.screenshot?`<div class="shotwrap skel"><a href="${esc(n.screenshot)}" target="_blank"><img class="dshot capped fade" data-src="${esc(n.screenshot)}" alt=""></a></div><button class="shot-expand" id="shot-exp">expand full length</button>`:'<span class="dshot hatch" style="height:400px;display:block"></span>'}
@@ -4084,7 +4543,7 @@ function initDashboard(){
       <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:14px">
         <div><h2 style="font-size:19px">${esc(DASH.identity.name)}'s visual language — as it is actually used</h2>
         <p style="font-size:12px;color:var(--dim);margin-top:3px">every value below was measured across the ${DASH.identity.downloaded} captured pages <span class="ai">observed · heuristic</span></p></div>
-        <div style="margin-left:auto">${pchip('Audit the visual language', PROMPTS.auditTokens())}</div>
+        <div style="margin-left:auto">${pchip('Audit the visual language', PROMPTS.auditTokens(), false, 'audit')}</div>
       </div>
       <div class="provenance">Everything below is <code>method: heuristic</code> — values <b>observed</b> on the captured pages, aggregated and clustered by statistics.
         They are evidence of how the product is styled today, <b>not</b> its authored design tokens. Filter: seen on 2+ pages
@@ -4334,7 +4793,7 @@ function initDashboard(){
         <div class="t"><span class="kick">The reason this library exists</span>
           <h3>Design something new — in ${esc(DASH.identity.name)}'s own language</h3>
           <p>A new page or flow that borrows the real components, patterns, and grammar of the ${DASH.identity.downloaded} pages here — it lands in <code>wireframes/new/</code>, the library stays untouched.</p></div>
-        ${pchip('Copy the design-new prompt', PROMPTS.designNew())}
+        ${pchip('Copy the design-new prompt', PROMPTS.designNew(), false, 'designNew')}
       </div>
       <div class="sensitivity">Captured logged-in? The library holds your <b>real account data</b> (orders, addresses). Share the folder or bundles accordingly — and <code>profiles/</code> (your live browser session) must never leave this machine.</div>
       <div class="mode">
@@ -4349,18 +4808,18 @@ function initDashboard(){
         <p>Open Claude Code in this folder — it reads this workspace's instructions automatically and knows every page here.</p>
         <div class="mono-cmd">${esc(cdCmd)}</div>
         <div class="chiprow" style="margin-top:10px">
-          ${pchip('Describe the pages', PROMPTS.describeLibrary())}
-          ${pchip('First wireframe', PROMPTS.wireframe(firstSlug), true)}
-          ${pchip('Add a state', PROMPTS.addState(), true)}
-          ${pchip('Guided capture', PROMPTS.guided(), true)}
-          ${pchip("What's missing?", PROMPTS.whatsMissing(), true)}
-          ${pchip('Re-capture check', PROMPTS.recaptureCheck(), true)}
+          ${pchip('Describe the pages', PROMPTS.describeLibrary(), false, 'describe')}
+          ${pchip('First wireframe', PROMPTS.wireframe(firstSlug), true, 'wireframe|'+firstSlug)}
+          ${pchip('Add a state', PROMPTS.addState(), true, 'addState')}
+          ${pchip('Guided capture', PROMPTS.guided(), true, 'guided')}
+          ${pchip("What's missing?", PROMPTS.whatsMissing(), true, 'missing')}
+          ${pchip('Re-capture check', PROMPTS.recaptureCheck(), true, 'recapture')}
         </div>
       </div>
       <div class="mode">
         <h3>With another AI coding tool</h3>
         <p>Cursor, Windsurf, and similar read files too. Point them at <code>AGENTS.md</code>, then paste this to get started.</p>
-        <div class="chiprow">${pchip('Bootstrap prompt', PROMPTS.bootstrap())}</div>
+        <div class="chiprow">${pchip('Bootstrap prompt', PROMPTS.bootstrap(), false, 'bootstrap')}</div>
       </div>
       <div class="mode">
         <h3>With a chat-only AI</h3>
@@ -4387,6 +4846,14 @@ node tools/shot.js &lt;file.html&gt; [out.png] [--full]   # preview any local HT
     btn.onclick = async ()=>{ btn.disabled=true;
       const sel = document.getElementById('bundle-page').value;
       const { text, note } = await buildBundle(sel);
+      // Hosted: there is no second AI to paste this into. The one on this page already has the whole
+      // library behind it. So the button opens the conversation instead, carrying the bundle it just
+      // built as the drawer's copy-instead chip, for a visitor who does want it elsewhere.
+      if (document.documentElement.getAttribute('data-hosted') === '1'){
+        btn.disabled = false;
+        openChat('bundle', { slug:sel || '', prompt:text, opener:btn });
+        return;
+      }
       // `false` — the bundle is the ONE copy that must not name the workspace folder: it exists for an
       // AI with no file access, so "resolve every path above against that folder" would be false
       // guidance. See copyPrompt.

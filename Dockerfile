@@ -1,9 +1,16 @@
 # Hosted, read-only Design Context Kit.
 #
-# The dashboard server (tools/map.js) is bare node:http and pulls in no npm package at runtime:
-# its one `require('playwright')` sits inside a try/catch, behind an endpoint that hosted mode
-# refuses before it is ever reached. So there is no install step here and no node_modules in the
-# image — just Node and the captured library.
+# Serving the library needs no npm package at all: tools/map.js is bare node:http, and its one
+# `require('playwright')` sits inside a try/catch behind an endpoint hosted mode refuses. The chat
+# panel is the exception, so exactly two packages are installed and nothing else.
+#
+# Deliberately NOT `npm ci`. tools/package.json also lists playwright and js-beautify, which the
+# capture step needs and this image must never run: hosted mode refuses every capture endpoint, so
+# shipping a browser-automation library into a read-only server would add tens of megabytes and a
+# large attack surface to hold code that cannot execute. Both packages are pinned exactly rather
+# than by range, because chat.js depends on cheerio's `_useHtmlParser2` option: parse5, cheerio's
+# default parser, allocates 752MB of heap on the 24MB x-corporate-cards snapshot against
+# htmlparser2's 3.5MB. A silent minor-version change there is an out-of-memory kill on this VM.
 #
 # Nothing in this image can capture, crawl, log in or write to the library. See DCK_HOSTED in
 # tools/map.js for exactly what that means.
@@ -15,11 +22,17 @@ ENV NODE_ENV=production \
 
 WORKDIR /app
 
+# Server code first, then its two packages, then the library. Ordered so that re-capturing the
+# library — the thing that changes most often — rebuilds only the last and heaviest layer.
+COPY tools/ ./tools/
+COPY skills/ ./skills/
+RUN npm install --prefix tools --no-save --no-audit --no-fund --omit=optional \
+      @anthropic-ai/sdk@0.122.0 cheerio@1.2.0 \
+ && npm cache clean --force
+
 # The captured library is the bulk of this image (~250MB) and is deliberately baked in rather than
 # mounted: the demo has to open instantly and must not depend on a volume or a network fetch.
-COPY tools/ ./tools/
 COPY design-context/ ./design-context/
-COPY skills/ ./skills/
 COPY AGENTS.md CLAUDE.md README.md LICENSE ./
 
 # Run as the unprivileged user the base image already provides. The process only ever reads.

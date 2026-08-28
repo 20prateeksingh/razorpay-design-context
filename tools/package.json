@@ -8,6 +8,8 @@
     "test": "node test-all.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.122.0",
+    "cheerio": "^1.2.0",
     "js-beautify": "^1.15.4",
     "playwright": "^1.40.0"
   }

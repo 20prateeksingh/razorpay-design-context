@@ -37,6 +37,11 @@
  *   POST /api/wireframe-shot {file}       → renders a missing preview with shot.js (serialized, one
  *                                           Chromium at a time), then rebuilds so a reload keeps it
  *
+ * Chat (hosted chat panel), implemented entirely in chat.js; this file only routes:
+ *   GET  /api/chat/capabilities          → {ok, enabled, reason, model}; enabled:false with no API key
+ *   POST /api/chat                       → SSE: token · tool · wireframe · done · error
+ *   GET  /session/:sid/wireframes/…      → a visitor's own generated wireframe HTML, path-guarded
+ *
  * Copy for Figma (figma-exit-copy-paste PRD, F3):
  *   POST /api/figma-copy {slug, state?}   → records the exit in figma-copies.json (additive) +
  *        …or {wireframe:'<id>'}            (a wireframe copy has no page slug; same file, same rebuild)
@@ -55,6 +60,10 @@ const fs = require('fs');
 const path = require('path');
 const { execFile, spawn } = require('child_process');
 const { normalizeWizardUrl } = require('./wizard-url.js'); // F5: same bare-domain acceptance as the client wizard
+// The chat backend. Requiring it is safe with nothing installed and no key set: chat.js pulls its
+// own dependencies lazily and reports itself disabled rather than throwing, because the dashboard's
+// whole promise is that it serves the library on a machine that ran no npm install.
+const chat = require('./chat.js');
 
 const args = process.argv.slice(2);
 
@@ -449,6 +458,12 @@ const server = http.createServer((req, res) => {
   // ── GET api ────────────────────────────────────────────────────────────────
   if (req.method === 'GET') {
     if (url === '/api/ping') return json(res, 200, { ok: true });
+    if (url === '/api/chat/capabilities') return json(res, 200, chat.capabilities());
+    // A visitor's own generated wireframes, served out of their session scratch dir under the OS
+    // temp dir. Routed HERE rather than left to the static handler below, which is rooted at the
+    // library and would only ever 404 it. chat.js applies the same normalize-then-prefix guard the
+    // static handler uses, against the session root.
+    if (url.startsWith('/session/') && chat.serveSessionAsset(req, res, url)) return;
     if (url === '/api/status') return json(res, 200, {
       ok: true, firstRun: isFirstRun(), product: readProduct(), lastAttempt: readLastAttempt(),
       // Absolute path of THIS workspace root — served live only, never baked into dashboard.html,
@@ -488,6 +503,15 @@ const server = http.createServer((req, res) => {
   }
 
   // ── POST api ─────────────────────────────────────────────────────────────────
+  // /api/chat is the ONE POST hosted mode allows, and it is worth being explicit about why the
+  // blanket refusal below does not apply. The three things that refusal protects are the library,
+  // the host's machine and shared state. Chat touches none of them: every write it makes goes into
+  // an ephemeral per-visitor dir under the OS temp dir, it spawns no browser, and it never opens a
+  // file under design-context/ for anything but reading. It is also the only endpoint here that
+  // costs the host money, which is why chat.js rate limits it rather than leaning on this gate.
+  // Routed before the refusal because that branch answers 403 before it ever reads a body.
+  if (req.method === 'POST' && url === '/api/chat') return chat.handleChat(req, res);
+
   if (req.method === 'POST' && url.startsWith('/api/')) {
     // Hosted: every POST is refused. No allowlist, because there is nothing here a visitor
     // needs to write. figma-copy looked like a safe exception — the DOM→Figma conversion and
